@@ -188,7 +188,8 @@ function Dashboard({ session }: { session: Session }) {
   }
 
   if (loading && !me) return <div className="app-loading"><span className="brand-mark">32</span><p>Preparando el espacio operativo…</p></div>
-  if (!me?.organizations.length) return <div className="app-loading"><span className="brand-mark">32</span><h2>Sin organización asignada</h2><p>Tu usuario existe, pero todavía no pertenece a ningún negocio.</p><button onClick={() => supabase.auth.signOut()}>Cerrar sesión</button></div>
+  if (!me) return <div className="app-loading"><span className="brand-mark">32</span><h2>No se pudo abrir el panel</h2><p>{error || 'La sesión no se pudo validar.'}</p><button onClick={() => window.location.reload()}>Reintentar</button><button onClick={() => supabase.auth.signOut()}>Cerrar sesión</button></div>
+  if (!me.organizations.length) return <div className="app-loading"><span className="brand-mark">32</span><h2>Sin organización asignada</h2><p>Tu usuario existe, pero todavía no pertenece a ningún negocio.</p><button onClick={() => supabase.auth.signOut()}>Cerrar sesión</button></div>
 
   return <main className={`app-shell section-${section}`}>
     <aside className="sidebar">

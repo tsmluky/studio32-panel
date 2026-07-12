@@ -44,5 +44,6 @@ backend; the service-role key is never part of this application.
 ## Deploy
 
 The project is a Vite application. Use `npm run build` and publish `dist/`.
+`netlify.toml` already defines those values and the SPA fallback for Netlify.
 Configure the three `VITE_*` values from `.env.example` in the hosting provider
 and add the final origin to the backend `CORS_ORIGINS` list.
