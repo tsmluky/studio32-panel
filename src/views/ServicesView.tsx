@@ -29,15 +29,17 @@ export function ServicesView({ session, organization }: { session: Session; orga
     finally { setBusy(false) }
   }
 
+  const canWrite = organization.role !== 'viewer'
   return <section className="workspace">
     <ViewHeader eyebrow={organization.name} title="Servicios" description="La información guardada aquí alimenta la siguiente conversación del agente." action={<RealtimeStatus />} />
     {error && <ViewError>{error}</ViewError>}
     <div className="settings-grid"><article className="workspace-card service-list"><div className="card-heading"><span className="eyebrow">Catálogo</span><strong>{services.length} servicios</strong></div>{services.map(item => <button key={item.id} className={selected?.id === item.id ? 'active' : ''} onClick={() => { setSelected(item); setSaved(false) }}><span><strong>{item.name}</strong><small>{item.duration_minutes || '—'} min · {item.price_amount === null ? 'Consultar' : `${item.price_amount} ${item.currency}`}</small></span><i className={item.active ? 'on' : ''} /></button>)}</article>
-      <form className="workspace-card editor-card" onSubmit={save}>{selected ? <><div className="card-heading"><div><span className="eyebrow">Edición</span><h2>{selected.name}</h2></div><label className="toggle-field"><input type="checkbox" checked={selected.active} onChange={event => field('active', event.target.checked)} />Activo</label></div>
-        <label>Nombre<input value={selected.name} onChange={event => field('name', event.target.value)} required /></label>
-        <label>Descripción para pacientes<textarea rows={4} value={selected.description || ''} onChange={event => field('description', event.target.value)} /></label>
-        <div className="form-columns"><label>Duración (min)<input type="number" min="5" value={selected.duration_minutes || ''} onChange={event => field('duration_minutes', Number(event.target.value) || null)} /></label><label>Precio orientativo<input type="number" min="0" step="0.01" value={selected.price_amount ?? ''} onChange={event => field('price_amount', event.target.value === '' ? null : Number(event.target.value))} /></label></div>
-        <div className="save-row"><span>{saved ? 'Cambio disponible para la próxima conversación.' : 'Los cambios quedan auditados.'}</span><button disabled={busy}>{busy ? 'Guardando…' : 'Guardar servicio'}</button></div></> : <p className="quiet-empty">Selecciona un servicio.</p>}</form>
+      <form className="workspace-card editor-card" onSubmit={save}>{selected ? <><div className="card-heading"><div><span className="eyebrow">Edición</span><h2>{selected.name}</h2></div><label className="toggle-field"><input type="checkbox" checked={selected.active} disabled={!canWrite} onChange={event => field('active', event.target.checked)} />Activo</label></div>
+        <label>Nombre<input value={selected.name} disabled={!canWrite} onChange={event => field('name', event.target.value)} required /></label>
+        <label>Descripción para pacientes<textarea rows={4} value={selected.description || ''} disabled={!canWrite} onChange={event => field('description', event.target.value)} /></label>
+        <div className="form-columns"><label>Duración (min)<input type="number" min="5" value={selected.duration_minutes || ''} disabled={!canWrite} onChange={event => field('duration_minutes', Number(event.target.value) || null)} /></label><label>Precio orientativo<input type="number" min="0" step="0.01" value={selected.price_amount ?? ''} disabled={!canWrite} onChange={event => field('price_amount', event.target.value === '' ? null : Number(event.target.value))} /></label></div>
+        {canWrite && <div className="save-row"><span>{saved ? 'Cambio disponible para la próxima conversación.' : 'Los cambios quedan auditados.'}</span><button disabled={busy}>{busy ? 'Guardando…' : 'Guardar servicio'}</button></div>}
+        {!canWrite && <div className="save-row"><span>Tu rol es de solo lectura.</span></div>}</> : <p className="quiet-empty">Selecciona un servicio.</p>}</form>
     </div>
   </section>
 }

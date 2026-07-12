@@ -116,8 +116,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .card-heading h2,.focus-card h2 { margin:5px 0 0; font:600 20px/1.15 Manrope,sans-serif; letter-spacing:-.035em; }
 .card-heading>strong { color:#7a837b; font-size:10px; }
 .compact-list { padding:5px 12px 12px; }
-.compact-row { min-height:66px; padding:10px 8px; display:grid; grid-template-columns:54px minmax(0,1fr) auto; align-items:center; gap:12px; border-bottom:1px solid #e7e9e5; }
+.compact-row { min-height:66px; padding:10px 8px; display:grid; grid-template-columns:68px minmax(0,1fr) auto; align-items:center; gap:12px; border-bottom:1px solid #e7e9e5; }
 .compact-row:last-child { border:0; }.compact-row time { color:#36543e; font:600 15px Manrope,sans-serif; }.compact-row>span { display:grid; gap:3px; }.compact-row strong { font-size:12px; }.compact-row small { color:#838b84; font-size:10px; }
+.compact-when { display:flex; flex-direction:column; gap:1px; line-height:1.15; }.compact-when small { color:#838b84; font-size:10px; font-weight:600; text-transform:capitalize; }.compact-when strong { color:#36543e; font-size:15px; }
 .status-pill { width:max-content; padding:5px 8px; border-radius:999px; color:#536158; background:#e7ebe6; font-size:8px; text-transform:uppercase; letter-spacing:.06em; }.status-pill.confirmed { color:#31613f; background:#e0ede3; }.status-pill.pending { color:#7a5a28; background:#f3e9d8; }.status-pill.cancelled,.status-pill.no_show { color:#7b4b49; background:#f2e3e1; }
 .focus-card { padding:25px; color:#e7ece7; background:linear-gradient(145deg,#18241c,#2e4937); }.focus-card .eyebrow { color:#9db0a1; }.focus-card p { margin:18px 0 50px; color:#bdc9bf; line-height:1.65; font-size:12px; }.system-line { display:flex; align-items:center; gap:9px; color:#d9e2da; font-size:10px; }.system-line i { background:#81bd8e; }
 .quiet-empty { padding:34px; margin:0; color:#899189; text-align:center; font-size:11px; }

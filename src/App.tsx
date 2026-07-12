@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { Component, FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { agentApi, ApiError } from './api'
 import { supabase } from './supabase'
@@ -24,6 +24,15 @@ function relativeTime(value?: string | null) {
   return new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short' }).format(new Date(value))
 }
 
+function loginErrorES(message: string) {
+  const m = String(message || '').toLowerCase()
+  if (m.includes('invalid login credentials')) return 'Email o contraseña incorrectos.'
+  if (m.includes('email not confirmed')) return 'Tu email todavía no está confirmado.'
+  if (m.includes('rate limit') || m.includes('too many')) return 'Demasiados intentos. Espera un momento e inténtalo de nuevo.'
+  if (m.includes('failed to fetch') || m.includes('network')) return 'No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.'
+  return 'No se pudo iniciar sesión. Inténtalo de nuevo.'
+}
+
 function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -34,9 +43,14 @@ function Login() {
     event.preventDefault()
     setLoading(true)
     setError('')
-    const result = await supabase.auth.signInWithPassword({ email, password })
-    if (result.error) setError(result.error.message)
-    setLoading(false)
+    try {
+      const result = await supabase.auth.signInWithPassword({ email, password })
+      if (result.error) setError(loginErrorES(result.error.message))
+    } catch (cause) {
+      setError(loginErrorES(cause instanceof Error ? cause.message : ''))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return <main className="login-shell">
@@ -212,7 +226,7 @@ function Dashboard({ session }: { session: Session }) {
         <div><span className="eyebrow">Recepción</span><h1>Conversaciones</h1></div>
         <select value={organization?.id} onChange={event => changeOrganization(event.target.value)} aria-label="Organización">{me.organizations.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
       </header>
-      <div className="summary-row"><article><span>Abiertas</span><strong>{conversations.filter(item => item.status === 'open').length}</strong></article><article><span>En humano</span><strong>{conversations.filter(item => item.control_mode === 'human').length}</strong></article><article><span>Última actividad</span><strong className="small-stat">{relativeTime(conversations[0]?.last_message_at)}</strong></article></div>
+      <div className="summary-row"><article><span>Abiertas</span><strong>{conversations.filter(item => item.status === 'open').length}</strong></article><article><span>En humano</span><strong>{conversations.filter(item => item.control_mode === 'human' && item.status !== 'resolved').length}</strong></article><article><span>Última actividad</span><strong className="small-stat">{relativeTime(conversations[0]?.last_message_at)}</strong></article></div>
       <div className="filter-row"><button className={filter === 'active' ? 'active' : ''} onClick={() => setFilter('active')}>Activas</button><button className={filter === 'human' ? 'active' : ''} onClick={() => setFilter('human')}>En humano</button><button className={filter === 'resolved' ? 'active' : ''} onClick={() => setFilter('resolved')}>Resueltas</button><button className="refresh-button" onClick={() => loadInbox()} aria-label="Actualizar">↻</button></div>
       {error && !selected && <div className="inline-error">{error}</div>}
       {loading ? <div className="loading-line">Actualizando conversaciones…</div> : <ConversationList conversations={conversations} selectedId={selected?.id} onSelect={setSelected} />}
@@ -221,7 +235,22 @@ function Dashboard({ session }: { session: Session }) {
   </main>
 }
 
-export default function App() {
+class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  componentDidCatch(error: unknown) { console.error('Panel error boundary:', error) }
+  render() {
+    if (!this.state.failed) return this.props.children
+    return <div className="app-loading">
+      <span className="brand-mark">32</span>
+      <h2>Algo ha fallado</h2>
+      <p>Se produjo un error inesperado en el panel. Recarga para volver a intentarlo.</p>
+      <button onClick={() => window.location.reload()}>Recargar</button>
+    </div>
+  }
+}
+
+function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [ready, setReady] = useState(false)
   useEffect(() => {
@@ -231,4 +260,8 @@ export default function App() {
   }, [])
   if (!ready) return <div className="app-loading"><span className="brand-mark">32</span></div>
   return session ? <Dashboard session={session} /> : <Login />
+}
+
+export default function AppRoot() {
+  return <ErrorBoundary><App /></ErrorBoundary>
 }

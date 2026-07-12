@@ -30,6 +30,7 @@ export function AppointmentsView({ session, organization }: { session: Session; 
     finally { setBusy('') }
   }
 
+  const canWrite = organization.role !== 'viewer'
   return <section className="workspace">
     <ViewHeader eyebrow={organization.name} title="Citas" description="Agenda operativa de los próximos 30 días." action={<RealtimeStatus />} />
     {error && <ViewError>{error}</ViewError>}
@@ -40,7 +41,7 @@ export function AppointmentsView({ session, organization }: { session: Session; 
           <span><strong>{item.contact?.name || 'Paciente'}</strong><small>{item.contact?.phone || item.contact?.email || 'Sin contacto'}</small></span>
           <span><strong>{item.service?.name || 'Cita'}</strong><small>{item.resource_name || 'Equipo de clínica'}</small></span>
           <span><b className={`status-pill ${item.status}`}>{item.status}</b><small>{item.external_calendar_event_id ? 'Calendar conectado' : 'Agenda interna'}</small></span>
-          <button className={confirming === item.id ? 'danger-action confirm' : 'danger-action'} disabled={item.status === 'cancelled' || busy === item.id} onClick={() => cancel(item)}>{confirming === item.id ? 'Confirmar' : item.status === 'cancelled' ? 'Cancelada' : 'Cancelar'}</button>
+          {canWrite && <button className={confirming === item.id ? 'danger-action confirm' : 'danger-action'} disabled={item.status === 'cancelled' || busy === item.id} onClick={() => cancel(item)}>{confirming === item.id ? 'Confirmar' : item.status === 'cancelled' ? 'Cancelada' : 'Cancelar'}</button>}
         </div>)}
         {!appointments.length && <p className="quiet-empty">No hay citas en este periodo.</p>}
       </div>

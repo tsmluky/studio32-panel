@@ -5,9 +5,34 @@ import { supabase } from '../supabase'
 import type { Organization, Summary } from '../types'
 import { formatDateTime, RealtimeStatus, ViewError, ViewHeader } from './shared'
 
+// Offset real de Europe/Madrid para una fecha dada (+02:00 en verano CEST,
+// +01:00 en invierno CET). Evita hardcodear el offset, que descuadraría la
+// ventana "hoy" medio año y contaría mal las citas cerca de medianoche.
+function madridOffset(date: Date) {
+  const name = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Madrid', timeZoneName: 'longOffset' })
+    .formatToParts(date).find(part => part.type === 'timeZoneName')?.value || 'GMT+00:00'
+  const match = name.match(/GMT([+-]\d{2}):?(\d{2})?/)
+  return match ? `${match[1]}:${match[2] || '00'}` : '+00:00'
+}
+
 function madridDay() {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
-  return { from: new Date(`${parts}T00:00:00+02:00`).toISOString(), to: new Date(`${parts}T23:59:59+02:00`).toISOString() }
+  const now = new Date()
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
+  const offset = madridOffset(now)
+  return { from: new Date(`${parts}T00:00:00${offset}`).toISOString(), to: new Date(`${parts}T23:59:59${offset}`).toISOString() }
+}
+
+function madridDateKey(value: string | number | Date) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value))
+}
+
+function dayLabel(value: string) {
+  const target = madridDateKey(value)
+  const today = madridDateKey(Date.now())
+  const tomorrow = madridDateKey(Date.now() + 86_400_000)
+  if (target === today) return 'Hoy'
+  if (target === tomorrow) return 'Mañana'
+  return new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', weekday: 'short', day: '2-digit', month: 'short' }).format(new Date(value))
 }
 
 export function OverviewView({ session, organization }: { session: Session; organization: Organization }) {
@@ -39,7 +64,7 @@ export function OverviewView({ session, organization }: { session: Session; orga
     </div>
     <div className="overview-grid">
       <article className="workspace-card"><div className="card-heading"><div><span className="eyebrow">Agenda</span><h2>Próximas citas</h2></div></div>
-        <div className="compact-list">{data?.next_appointments.length ? data.next_appointments.map(item => <div key={item.id} className="compact-row"><time>{formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })}</time><span><strong>{item.contact?.name || item.contact?.phone || 'Paciente'}</strong><small>{item.service?.name || 'Cita'}{item.resource_name ? ` · ${item.resource_name}` : ''}</small></span><b className={`status-pill ${item.status}`}>{item.status}</b></div>) : <p className="quiet-empty">No hay próximas citas registradas.</p>}</div>
+        <div className="compact-list">{data?.next_appointments.length ? data.next_appointments.map(item => <div key={item.id} className="compact-row"><time className="compact-when"><small>{dayLabel(item.starts_at)}</small><strong>{formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })}</strong></time><span><strong>{item.contact?.name || item.contact?.phone || 'Paciente'}</strong><small>{item.service?.name || 'Cita'}{item.resource_name ? ` · ${item.resource_name}` : ''}</small></span><b className={`status-pill ${item.status}`}>{item.status}</b></div>) : <p className="quiet-empty">No hay próximas citas registradas.</p>}</div>
       </article>
       <article className="workspace-card focus-card"><span className="eyebrow">Sistema</span><h2>Recepción bajo control</h2><p>Las conversaciones, citas y cambios de conocimiento quedan asociados a {organization.name} y aislados mediante RLS.</p><div className="system-line"><i />Agente y panel conectados</div></article>
     </div>
