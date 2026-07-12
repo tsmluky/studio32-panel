@@ -2,11 +2,12 @@ import { Component, FormEvent, ReactNode, useCallback, useEffect, useMemo, useSt
 import type { Session } from '@supabase/supabase-js'
 import { agentApi, ApiError } from './api'
 import { supabase } from './supabase'
-import type { Conversation, CurrentUser, Message, Organization } from './types'
+import type { Conversation, CurrentUser, Message, Organization, Summary } from './types'
 import { OverviewView } from './views/OverviewView'
 import { AppointmentsView } from './views/AppointmentsView'
 import { ServicesView } from './views/ServicesView'
 import { AgentView } from './views/AgentView'
+import { Icon } from './icons'
 
 type Filter = 'active' | 'human' | 'resolved'
 type Section = 'overview' | 'inbox' | 'appointments' | 'services' | 'agent'
@@ -110,35 +111,37 @@ function MessageBubble({ message }: { message: Message }) {
   </article>
 }
 
-function ConversationDetail({ session, organization, conversation, messages, busy, error, onRefresh, onChanged }: {
-  session: Session; organization: Organization; conversation: Conversation | null; messages: Message[]; busy: boolean; error: string; onRefresh: () => void; onChanged: (conversation: Conversation) => void
+function ConversationDetail({ session, organization, conversation, messages, busy, error, onRefresh, onChanged, onBack }: {
+  session: Session; organization: Organization; conversation: Conversation | null; messages: Message[]; busy: boolean; error: string; onRefresh: () => void; onChanged: (conversation: Conversation) => void; onBack: () => void
 }) {
   const [draft, setDraft] = useState('')
   const [action, setAction] = useState('')
   if (!conversation) return <section className="detail-panel no-selection"><EmptyState>Selecciona una conversación para consultar el historial y tomar el control.</EmptyState></section>
   const conversationId = conversation.id
+  const controlMode = conversation.control_mode
 
   async function run(label: string, operation: () => Promise<{ conversation: Conversation }>) {
     setAction(label)
     try { onChanged((await operation()).conversation) } finally { setAction('') }
   }
-  async function send(event: FormEvent) {
-    event.preventDefault()
+  async function submitDraft() {
     const body = draft.trim()
-    if (!body) return
+    if (!body || action || controlMode !== 'human') return
     setAction('send')
     try { await agentApi.sendMessage(session, conversationId, body); setDraft(''); onRefresh() } finally { setAction('') }
   }
+  function send(event: FormEvent) { event.preventDefault(); void submitDraft() }
 
   const canWrite = organization.role !== 'viewer'
   return <section className="detail-panel">
     <header className="detail-header">
+      <button className="detail-back" onClick={onBack} aria-label="Volver a la lista"><Icon name="back" size={20} /></button>
       <div className="detail-identity"><span className="avatar large">{initials(conversation.contact?.name || conversation.contact?.phone)}</span><div><h2>{conversation.contact?.name || 'Contacto'}</h2><p>{conversation.contact?.phone || conversation.contact?.email || 'Sin contacto'}</p></div></div>
       <div className="detail-actions">
         {conversation.control_mode === 'agent'
           ? <button disabled={!canWrite || !!action} onClick={() => run('takeover', () => agentApi.takeover(session, conversation.id))}>Tomar control</button>
           : <button className="release" disabled={!canWrite || !!action} onClick={() => run('release', () => agentApi.release(session, conversation.id))}>Devolver al agente</button>}
-        {conversation.status !== 'resolved' && <button className="icon-button" aria-label="Resolver conversación" disabled={!canWrite || !!action} onClick={() => run('resolve', () => agentApi.resolve(session, conversation.id))}>✓</button>}
+        {conversation.status !== 'resolved' && <button className="icon-button" aria-label="Resolver conversación" disabled={!canWrite || !!action} onClick={() => run('resolve', () => agentApi.resolve(session, conversation.id))}><Icon name="check" size={15} /></button>}
       </div>
     </header>
     <div className="control-strip"><span className={`control-dot ${conversation.control_mode}`} />{conversation.control_mode === 'agent' ? 'El agente responde automáticamente' : 'El agente está pausado; responde el equipo'}<button onClick={onRefresh}>Actualizar</button></div>
@@ -148,8 +151,8 @@ function ConversationDetail({ session, organization, conversation, messages, bus
     </div>
     {error && <div className="inline-error" role="alert">{error}</div>}
     <form className="composer" onSubmit={send}>
-      <textarea value={draft} onChange={event => setDraft(event.target.value)} disabled={!canWrite || conversation.control_mode !== 'human'} placeholder={conversation.control_mode === 'human' ? 'Escribe como miembro del equipo…' : 'Toma el control para responder manualmente'} rows={2} />
-      <button className="send-button" disabled={!draft.trim() || !!action || conversation.control_mode !== 'human'} aria-label="Enviar mensaje">↑</button>
+      <textarea value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submitDraft() } }} disabled={!canWrite || conversation.control_mode !== 'human'} placeholder={conversation.control_mode === 'human' ? 'Escribe como miembro del equipo… (Enter envía)' : 'Toma el control para responder manualmente'} rows={2} />
+      <button className="send-button" disabled={!draft.trim() || !!action || conversation.control_mode !== 'human'} aria-label="Enviar mensaje"><Icon name="send" size={18} /></button>
     </form>
   </section>
 }
@@ -166,8 +169,10 @@ function Dashboard({ session }: { session: Session }) {
   const [error, setError] = useState('')
   const [section, setSection] = useState<Section>('overview')
 
+  const [metrics, setMetrics] = useState<Summary['metrics'] | null>(null)
   const organization = me?.organizations.find(item => item.id === organizationId) || me?.organizations[0]
-  const filterQuery = useMemo(() => filter === 'human' ? '&control_mode=human' : filter === 'resolved' ? '&status=resolved' : '&status=open', [filter])
+  const filterQuery = useMemo(() => filter === 'human' ? '&control_mode=human&status=open' : filter === 'resolved' ? '&status=resolved' : '&status=open', [filter])
+  const lastActivity = conversations.reduce<string | null>((max, item) => (item.last_message_at && (!max || item.last_message_at > max)) ? item.last_message_at : max, null)
 
   const loadInbox = useCallback(async (quiet = false) => {
     if (!organization) return
@@ -177,6 +182,11 @@ function Dashboard({ session }: { session: Session }) {
       setConversations(data.conversations)
       setSelected(current => current ? data.conversations.find(item => item.id === current.id) || current : null)
       setError('')
+      // Contadores de cabecera desde el estado global (no la lista filtrada).
+      // open/human no dependen del rango; sirve una ventana cualquiera.
+      const now = Date.now()
+      agentApi.summary(session, organization.id, new Date(now - 86_400_000).toISOString(), new Date(now + 86_400_000).toISOString())
+        .then(summary => setMetrics(summary.metrics)).catch(() => {})
     } catch (cause) { setError(cause instanceof ApiError ? cause.message : 'No se pudo cargar el inbox.') }
     if (!quiet) setLoading(false)
   }, [session, organization, filterQuery])
@@ -206,16 +216,20 @@ function Dashboard({ session }: { session: Session }) {
   if (!me.organizations.length) return <div className="app-loading"><span className="brand-mark">32</span><h2>Sin organización asignada</h2><p>Tu usuario existe, pero todavía no pertenece a ningún negocio.</p><button onClick={() => supabase.auth.signOut()}>Cerrar sesión</button></div>
 
   return <main className={`app-shell section-${section}`}>
+    <header className="mobile-topbar">
+      <div className="brand-lockup compact"><span className="brand-mark">32</span><span>Studio32</span></div>
+      <button className="topbar-signout" onClick={() => supabase.auth.signOut()} aria-label="Cerrar sesión"><Icon name="signout" size={18} /></button>
+    </header>
     <aside className="sidebar">
       <div className="brand-lockup compact"><span className="brand-mark">32</span><span>Studio32</span></div>
       <nav>
-        <button className={section === 'overview' ? 'active' : ''} aria-label="Resumen" onClick={() => setSection('overview')}>◫<span>Resumen</span></button>
-        <button className={section === 'inbox' ? 'active' : ''} aria-label="Conversaciones" onClick={() => setSection('inbox')}>⌁<span>Inbox</span></button>
-        <button className={section === 'appointments' ? 'active' : ''} aria-label="Citas" onClick={() => setSection('appointments')}>□<span>Citas</span></button>
-        <button className={section === 'services' ? 'active' : ''} aria-label="Servicios" onClick={() => setSection('services')}>◇<span>Servicios</span></button>
-        <button className={section === 'agent' ? 'active' : ''} aria-label="Agente" onClick={() => setSection('agent')}>✦<span>Agente</span></button>
+        <button className={section === 'overview' ? 'active' : ''} aria-label="Resumen" onClick={() => setSection('overview')}><Icon name="overview" /><span>Resumen</span></button>
+        <button className={section === 'inbox' ? 'active' : ''} aria-label="Conversaciones" onClick={() => setSection('inbox')}><Icon name="inbox" /><span>Inbox</span></button>
+        <button className={section === 'appointments' ? 'active' : ''} aria-label="Citas" onClick={() => setSection('appointments')}><Icon name="appointments" /><span>Citas</span></button>
+        <button className={section === 'services' ? 'active' : ''} aria-label="Servicios" onClick={() => setSection('services')}><Icon name="services" /><span>Servicios</span></button>
+        <button className={section === 'agent' ? 'active' : ''} aria-label="Asistente" onClick={() => setSection('agent')}><Icon name="agent" /><span>Asistente</span></button>
       </nav>
-      <div className="sidebar-user"><span className="avatar small">{initials(me.user.email)}</span><span><strong>{me.user.email.split('@')[0]}</strong><small>{organization?.role}</small></span><button onClick={() => supabase.auth.signOut()} aria-label="Cerrar sesión">↗</button></div>
+      <div className="sidebar-user"><span className="avatar small">{initials(me.user.email)}</span><span><strong>{me.user.email.split('@')[0]}</strong><small>{organization?.role}</small></span><button onClick={() => supabase.auth.signOut()} aria-label="Cerrar sesión"><Icon name="signout" size={18} /></button></div>
     </aside>
     {section === 'overview' && <OverviewView session={session} organization={organization!} />}
     {section === 'appointments' && <AppointmentsView session={session} organization={organization!} />}
@@ -226,12 +240,12 @@ function Dashboard({ session }: { session: Session }) {
         <div><span className="eyebrow">Recepción</span><h1>Conversaciones</h1></div>
         <select value={organization?.id} onChange={event => changeOrganization(event.target.value)} aria-label="Organización">{me.organizations.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
       </header>
-      <div className="summary-row"><article><span>Abiertas</span><strong>{conversations.filter(item => item.status === 'open').length}</strong></article><article><span>En humano</span><strong>{conversations.filter(item => item.control_mode === 'human' && item.status !== 'resolved').length}</strong></article><article><span>Última actividad</span><strong className="small-stat">{relativeTime(conversations[0]?.last_message_at)}</strong></article></div>
-      <div className="filter-row"><button className={filter === 'active' ? 'active' : ''} onClick={() => setFilter('active')}>Activas</button><button className={filter === 'human' ? 'active' : ''} onClick={() => setFilter('human')}>En humano</button><button className={filter === 'resolved' ? 'active' : ''} onClick={() => setFilter('resolved')}>Resueltas</button><button className="refresh-button" onClick={() => loadInbox()} aria-label="Actualizar">↻</button></div>
+      <div className="summary-row"><article><span>Abiertas</span><strong>{metrics?.open_conversations ?? conversations.filter(item => item.status === 'open').length}</strong></article><article><span>En humano</span><strong>{metrics?.human_conversations ?? conversations.filter(item => item.control_mode === 'human' && item.status !== 'resolved').length}</strong></article><article><span>Última actividad</span><strong className="small-stat">{relativeTime(lastActivity)}</strong></article></div>
+      <div className="filter-row"><button className={filter === 'active' ? 'active' : ''} onClick={() => setFilter('active')}>Activas</button><button className={filter === 'human' ? 'active' : ''} onClick={() => setFilter('human')}>En humano</button><button className={filter === 'resolved' ? 'active' : ''} onClick={() => setFilter('resolved')}>Resueltas</button><button className="refresh-button" onClick={() => loadInbox()} aria-label="Actualizar"><Icon name="refresh" size={16} /></button></div>
       {error && !selected && <div className="inline-error">{error}</div>}
       {loading ? <div className="loading-line">Actualizando conversaciones…</div> : <ConversationList conversations={conversations} selectedId={selected?.id} onSelect={setSelected} />}
     </section>
-    <ConversationDetail session={session} organization={organization!} conversation={selected} messages={messages} busy={detailBusy} error={selected ? error : ''} onRefresh={loadMessages} onChanged={updateConversation} /></>}
+    <ConversationDetail session={session} organization={organization!} conversation={selected} messages={messages} busy={detailBusy} error={selected ? error : ''} onRefresh={loadMessages} onChanged={updateConversation} onBack={() => setSelected(null)} /></>}
   </main>
 }
 

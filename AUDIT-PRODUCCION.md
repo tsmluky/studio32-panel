@@ -18,7 +18,7 @@ Estado: ✅ hecho · ⏳ pendiente · 🔵 pendiente de datos (scripts Supabase,
 | # | Sev | Estado | Punto | Ubicación / acción |
 |---|-----|--------|-------|--------------------|
 | A1 | 🔴 | ✅ | `.env.local` apuntaba a Bonto (backend dormido) → cambiado a Railway | `.env.local` (local, gitignored) |
-| A2 | 🟠 | ⏳ | `.env.example` **también** apunta a Bonto; quien lo copie arranca contra el backend muerto | `.env.example:3` → Railway o placeholder |
+| A2 | 🟠 | ✅ | `.env.example` apunta a Railway | `.env.example:3` |
 | A3 | 🟡 | ⏳ | Verificar en Netlify que `VITE_AGENT_API_URL` = Railway antes del go-live (no fiarse de memoria) | Netlify env vars |
 | A4 | ⚪ | ⏳ | Sin favicon: la pestaña muestra el icono por defecto del navegador | `index.html` + `public/favicon` |
 | A5 | ⚪ | ⏳ | `.claude/launch.json` (helper dev) sin trackear; decidir si se ignora | `.gitignore` |
@@ -30,17 +30,17 @@ Estado: ✅ hecho · ⏳ pendiente · 🔵 pendiente de datos (scripts Supabase,
 | B1 | 🟠 | ✅ | "Próximas citas" mostraba solo la hora → contradecía "Citas de hoy" y parecía desordenada. Ahora `Hoy/Mañana/Mié 15 Jul` + hora | `views/OverviewView.tsx`, `styles.css` |
 | B3 | 🟠 | ✅ | Contador "En humano" contaba conversaciones resueltas (mostraba 2 en filtro Resueltas). Ahora excluye resueltas | `App.tsx:215` |
 | B4 | 🟡 | ⏳ | `useEffect` de `me` depende solo de `[session]` pero usa `organizationId` → closure obsoleta (funciona por lectura inicial de localStorage) | `App.tsx:178` |
-| B5 | 🟡 | ⏳ | Los contadores de cabecera del inbox (Abiertas / En humano / Última actividad) se calculan sobre la lista **filtrada**, no sobre estado global. Deberían venir de `/summary` | `App.tsx:215` |
-| B6 | 🟡 | ⏳ | Filtro "En humano" usa `&control_mode=human` sin `status` → trae también resueltas en humano (raíz de B3) | `App.tsx:156` (`filterQuery`) |
+| B5 | 🟡 | ✅ | Contadores "Abiertas"/"En humano" ahora vienen de `/summary` (estado global), estables entre filtros. Verificado: en "Resueltas" muestran 0/0 aunque la lista tenga resueltas-en-humano | `App.tsx` |
+| B6 | 🟡 | ✅ | Filtro "En humano" ahora `&control_mode=human&status=open` (solo activas) | `App.tsx` (`filterQuery`) |
 | B7 | 🟠 | ✅ | `madridDay()` usaba offset fijo `+02:00`. Ahora deriva el offset real de Madrid (`madridOffset`): `+02:00` verano / `+01:00` invierno. Verificado en Node | `views/OverviewView.tsx` |
-| B8 | 🟡 | ⏳ | "Última actividad" usa `conversations[0]?.last_message_at` asumiendo orden desc del backend; debería tomar el máximo, no el `[0]` | `App.tsx:215` |
+| B8 | 🟡 | ✅ | "Última actividad" toma el máximo real de `last_message_at`, no `[0]` | `App.tsx` (`lastActivity`) |
 
 ## C · Seguridad y roles
 
 | # | Sev | Estado | Punto | Ubicación / acción |
 |---|-----|--------|-------|--------------------|
 | C1 | 🟡 | ✅ | `ServicesView`: inputs `disabled` y "Guardar" oculto para `viewer`; muestra "solo lectura" | `views/ServicesView.tsx` |
-| C2 | 🟡 | ✅ | `AgentView`: textareas `disabled` y "Guardar" oculto para `viewer` | `views/AgentView.tsx` |
+| C2 | 🟡 | ✅(superado) | `AgentView` ya no edita: es solo-lectura (ver K1), guard de rol innecesario | `views/AgentView.tsx` |
 | C3 | 🟡 | ✅ | `AppointmentsView`: botón "Cancelar" oculto para `viewer` | `views/AppointmentsView.tsx` |
 | — | — | — | Referencia correcta: el Inbox sí usa `canWrite = role !== 'viewer'` | `App.tsx:119` |
 
@@ -48,13 +48,13 @@ Estado: ✅ hecho · ⏳ pendiente · 🔵 pendiente de datos (scripts Supabase,
 
 | # | Sev | Estado | Punto | Ubicación / acción |
 |---|-----|--------|-------|--------------------|
-| D1 | ⚪ | ⏳ | "Primera valoración (gratuita)" muestra "0 EUR" en vez de "Gratis" cuando `price_amount === 0` | `ServicesView` (lista) y donde se pinte precio |
+| D1 | ⚪ | ✅ | "Gratis" cuando `price_amount === 0` (antes "0 EUR") | `ServicesView` (lista) |
 | D3 | 🟠 | ✅ | Errores de login mapeados a español (`loginErrorES`: credenciales, no confirmado, rate limit, red) + try/catch | `App.tsx` `Login` |
 | D4 | 🟠 | ⏳ | No hay recuperación de contraseña ("¿Olvidaste tu contraseña?"). El cliente lo necesitará en producción | `App.tsx` `Login` (feature) |
 | D5 | 🟠 | ✅ | `ErrorBoundary` envolviendo la app con fallback "Algo ha fallado / Recargar" | `App.tsx` |
-| D11 | ⚪ | ⏳ | Iconos del sidebar son glifos unicode (`◫ ⌁ □ ◇ ✦`); renderizan distinto según SO/fuente y se ven amateur. Cambiar a SVG | `App.tsx` sidebar |
-| D12 | ⚪ | ⏳ | Composer sin enviar con Enter ni límite de caracteres | `App.tsx` `ConversationDetail` |
-| D13 | ⚪ | ⏳ | El screenshot del navegador embebido se colgaba (render pesado); revisar rendimiento/CSS en Chrome real del cliente | — |
+| D11 | ⚪ | ✅ | Iconos del sidebar y acciones (↻ ↑ ✓ ↗) migrados a sistema SVG (`icons.tsx`); consistentes en todo SO | `icons.tsx`, `App.tsx` |
+| D12 | ⚪ | ✅ | Composer envía con Enter (Shift+Enter = salto); placeholder lo indica | `App.tsx` `ConversationDetail` |
+| D13 | ⚪ | ✅(ok) | El screenshot del pane embebido ya no se cuelga; render correcto verificado en móvil y desktop | — |
 
 ## E · Accesibilidad
 
@@ -83,6 +83,39 @@ Estado: ✅ hecho · ⏳ pendiente · 🔵 pendiente de datos (scripts Supabase,
 | H2 | ⚪ | ✅(N/A) | Las conversaciones E2E ya están `resolved`; el inbox por defecto (Activas) está limpio. `cleanup-test-conversations.js` no encuentra nada (solo mira open/waiting). Los nombres E2E solo quedan en el histórico "Resueltas", baja visibilidad | — (dejar histórico o purgar aparte) |
 | H4 | 🟠 | ✅ | 3 citas de prueba borradas (`--apply`). Verificado en vivo: agenda solo con las 2 de Pancho | `agent/scripts/cleanup-test-appointments.js gh-dent --apply` |
 | H3 | 🟡 | 🔵 | Cita de Pancho 10:00 sin `service_id` → cae al fallback "Cita" (parte de los datos de prueba) | Vincular servicio o borrar cita |
+
+## J · UI mobile-first (2026-07-13)
+
+El panel se usa mayoritariamente desde el móvil → rediseño mobile-first del layout.
+
+| # | Sev | Estado | Punto | Ubicación |
+|---|-----|--------|-------|-----------|
+| J1 | 🟠 | ✅ | Sistema de iconos SVG (`icons.tsx`) sustituye todos los glifos unicode (nav + acciones) | `icons.tsx` |
+| J2 | 🟠 | ✅ | Navegación móvil: barra lateral → **tab bar inferior** (icono + etiqueta) + barra superior (marca + salir) | `App.tsx`, `styles.css` |
+| J3 | 🟠 | ✅ | Vista Citas en móvil: tabla ancha con scroll → **tarjetas apiladas** | `styles.css` |
+| J4 | 🟡 | ✅ | Chat en móvil: pantalla completa inmersiva + botón "Volver" (antes te quedabas atrapado; composer tapado por la nav) | `App.tsx`, `styles.css` |
+| J5 | 🟡 | ✅ | Tamaños táctiles y legibilidad ajustados en móvil (nav, métricas, filtros) | `styles.css` |
+| J6 | ⚪ | ✅ | En móvil, seleccionar un servicio hace scroll suave al editor (`scrollIntoView`, solo ≤720px) | `ServicesView` |
+
+Verificado en vivo (viewport 375px) las 5 vistas + desktop intacto. `tsc`/`build`/tests OK.
+
+## K · Producto: pestaña Agente (2026-07-13)
+
+Problema: el editor de Tono/FAQ/Políticas en crudo exige oficio de redacción, intimida
+(página en blanco) y arriesga la calidad hacia los pacientes; además el cliente podía
+sobrescribir una config buena. Principio adoptado: **el cliente contesta datos, la
+agencia redacta el prompt**.
+
+| # | Sev | Estado | Punto | Ubicación |
+|---|-----|--------|-------|-----------|
+| K1 | 🟠 | ✅ | Agente pasa a **solo-lectura** (Solución A): "Qué hace tu asistente" (bullets) + "Preguntas que sabe responder" (FAQ) + "Solicitar un cambio". Sin editor en crudo; no se exponen tripas (`createBooking`/`registerLead`). Verificado desktop + móvil | `views/AgentView.tsx`, `styles.css` |
+| K2 | 🟠 | ✅ | "Solicitar un cambio" → WhatsApp real `34694293166` (fallback email `info@studio32.es`), con mensaje prellenado. Verificado el href | `views/AgentView.tsx` |
+| K4 | 🟡 | ✅ | Pestaña renombrada de "Agente" (jerga) a **"Asistente"** (casa con el título "Tu asistente"; "Configuración" se descartó por engañoso en una vista de solo-lectura) | `App.tsx` |
+| K3 | 🟡 | ✅ | Cuestionario de puesta en marcha dental redactado (mapea a `business/services/faq/handoff`) | `30-recursos/CUESTIONARIO-PUESTA-EN-MARCHA-DENTAL.md` |
+
+Seguridad: la config real se autora en `studio32-agent/tenants/<id>/*.md|json` e importa a
+Supabase; el panel era superficie secundaria → solo-lectura no rompe autoría. Onboarding
+por plantilla de vertical ya existe (`src/onboarding.js`), falta crear `templates/dental/`.
 
 ## Decisiones de diseño (evaluadas y cerradas)
 
