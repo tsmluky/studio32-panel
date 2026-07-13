@@ -97,6 +97,9 @@ El panel se usa mayoritariamente desde el móvil → rediseño mobile-first del 
 | J5 | 🟡 | ✅ | Tamaños táctiles y legibilidad ajustados en móvil (nav, métricas, filtros) | `styles.css` |
 | J6 | ⚪ | ✅ | En móvil, seleccionar un servicio hace scroll suave al editor (`scrollIntoView`, solo ≤720px) | `ServicesView` |
 
+| J7 | 🟡 | ✅ | Iconos SVG descentrados en botones (secuela de migrar glifos→SVG): se centran send, resolver, refresh, salir (`place-items:center`). Botón enviar 44x44 con avión compensado | `styles.css` |
+| J8 | 🟡 | ✅ | Header de conversación en móvil descongestionado: avatar oculto, "Tomar control" y ✓ a la misma altura, espaciado apretado | `styles.css` |
+
 Verificado en vivo (viewport 375px) las 5 vistas + desktop intacto. `tsc`/`build`/tests OK.
 
 ## K · Producto: pestaña Agente (2026-07-13)
