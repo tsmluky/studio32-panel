@@ -55,6 +55,8 @@ Estado: ✅ hecho · ⏳ pendiente · 🔵 pendiente de datos (scripts Supabase,
 | D11 | ⚪ | ✅ | Iconos del sidebar y acciones (↻ ↑ ✓ ↗) migrados a sistema SVG (`icons.tsx`); consistentes en todo SO | `icons.tsx`, `App.tsx` |
 | D12 | ⚪ | ✅ | Composer envía con Enter (Shift+Enter = salto); placeholder lo indica | `App.tsx` `ConversationDetail` |
 | D13 | ⚪ | ✅(ok) | El screenshot del pane embebido ya no se cuelga; render correcto verificado en móvil y desktop | — |
+| D14 | 🟡 | ✅ | Placeholder del login era `equipo@clinica.es` (específico de clínica y engañoso ahora que hay varios tenants). Cambiado a `tu@correo.es` | `App.tsx` `Login` |
+| D15 | 🟡 | ✅ | El botón "Resolver" era un ✓ suelto sin etiqueta (parecía decorativo/inútil siendo la ÚNICA forma de cerrar conversaciones). Ahora icono + texto "Resolver" | `App.tsx` `ConversationDetail`, `styles.css` |
 
 ## E · Accesibilidad
 
@@ -99,6 +101,7 @@ El panel se usa mayoritariamente desde el móvil → rediseño mobile-first del 
 
 | J7 | 🟡 | ✅ | Iconos SVG descentrados en botones (secuela de migrar glifos→SVG): se centran send, resolver, refresh, salir (`place-items:center`). Botón enviar 44x44 con avión compensado | `styles.css` |
 | J8 | 🟡 | ✅ | Header de conversación en móvil descongestionado: avatar oculto, "Tomar control" y ✓ a la misma altura, espaciado apretado | `styles.css` |
+| J9 | 🟡 | ✅ | Botón de enviar descompensado: era 44px cuadrado con `align-items:end` contra un textarea de ~57px. Ahora `align-items:stretch` + `align-self:stretch` → misma altura que el bloque de texto | `styles.css` |
 
 Verificado en vivo (viewport 375px) las 5 vistas + desktop intacto. `tsc`/`build`/tests OK.
 

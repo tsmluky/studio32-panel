@@ -69,7 +69,7 @@ function Login() {
         <span className="eyebrow">Acceso privado</span>
         <h2>Entrar al panel</h2>
         <p>Utiliza las credenciales asignadas a tu organización.</p>
-        <label>Email<input type="email" required autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="equipo@clinica.es" /></label>
+        <label>Email<input type="email" required autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="tu@correo.es" /></label>
         <label>Contraseña<input type="password" required autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••••••" /></label>
         {error && <div className="form-error" role="alert">{error}</div>}
         <button className="primary-button" disabled={loading}>{loading ? 'Comprobando…' : 'Acceder'}</button>
@@ -141,7 +141,7 @@ function ConversationDetail({ session, organization, conversation, messages, bus
         {conversation.control_mode === 'agent'
           ? <button disabled={!canWrite || !!action} onClick={() => run('takeover', () => agentApi.takeover(session, conversation.id))}>Tomar control</button>
           : <button className="release" disabled={!canWrite || !!action} onClick={() => run('release', () => agentApi.release(session, conversation.id))}>Devolver al agente</button>}
-        {conversation.status !== 'resolved' && <button className="icon-button" aria-label="Resolver conversación" disabled={!canWrite || !!action} onClick={() => run('resolve', () => agentApi.resolve(session, conversation.id))}><Icon name="check" size={15} /></button>}
+        {conversation.status !== 'resolved' && <button className="resolve-btn" aria-label="Resolver conversación" disabled={!canWrite || !!action} onClick={() => run('resolve', () => agentApi.resolve(session, conversation.id))}><Icon name="check" size={14} />Resolver</button>}
       </div>
     </header>
     <div className="control-strip"><span className={`control-dot ${conversation.control_mode}`} />{conversation.control_mode === 'agent' ? 'El agente responde automáticamente' : 'El agente está pausado; responde el equipo'}<button onClick={onRefresh}>Actualizar</button></div>
