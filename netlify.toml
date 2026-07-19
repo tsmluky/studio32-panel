@@ -2,6 +2,20 @@
   command = "npm run build"
   publish = "dist"
 
+# Temporary bridge while studio32.es is still delegated to Hostinger/Netlify.
+# Keep the public domain stable while serving the canonical Cloudflare Pages site.
+[[redirects]]
+  from = "https://studio32.es/*"
+  to = "https://studio32-web.pages.dev/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://www.studio32.es/*"
+  to = "https://studio32-web.pages.dev/:splat"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
