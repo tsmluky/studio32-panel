@@ -40,6 +40,18 @@ function calendarMonthDays(monthKey: string) {
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
+// "martes, 21 de julio" -> "Martes, 21 de julio" (solo la inicial: capitalize de CSS
+// pondría también "De" y "Julio", que en español es incorrecto).
+function capitalizeFirst(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+function appointmentLabel(item: Appointment) {
+  const parts = [item.service?.name || 'Cita']
+  if (item.contact?.name) parts.push(item.contact.name)
+  return parts.join(' · ')
+}
+
 export function AppointmentsView({ session, organization }: { session: Session; organization: Organization }) {
   const [mode, setMode] = useState<'calendar' | 'list'>('calendar')
   const [month, setMonth] = useState(madridDateKey().slice(0, 7))
@@ -143,11 +155,13 @@ export function AppointmentsView({ session, organization }: { session: Session; 
               if (day.slice(0, 7) !== month) classes.push('is-outside')
               if (day === today) classes.push('is-today')
               if (day === selectedDate) classes.push('is-selected')
-              return <button key={day} type="button" className={classes.join(' ')} onClick={() => setSelectedDate(day)} aria-label={`Ver ${day}`} aria-pressed={day === selectedDate}>
+              const dayName = capitalizeFirst(new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: MADRID_TZ }).format(new Date(`${day}T12:00:00`)))
+              const dayCount = items.length ? `, ${items.length} ${items.length === 1 ? 'cita' : 'citas'}` : ', sin citas'
+              return <button key={day} type="button" className={classes.join(' ')} onClick={() => setSelectedDate(day)} aria-label={`${dayName}${dayCount}`} aria-pressed={day === selectedDate}>
                 <strong>{Number(day.slice(-2))}</strong>
                 <span className="cal-cell-items">
-                  {items.slice(0, 2).map(item => <small key={item.id} className={`cal-chip ${item.status}`}>{formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })} {item.service?.name || item.contact?.name || 'Cita'}</small>)}
-                  {items.length > 2 && <small className="cal-more">+{items.length - 2}</small>}
+                  {items.slice(0, 3).map(item => <small key={item.id} className={`cal-chip ${item.status}`} title={`${formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })} · ${appointmentLabel(item)}`}>{formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })}</small>)}
+                  {items.length > 3 && <small className="cal-more">+{items.length - 3}</small>}
                 </span>
               </button>
             })}
@@ -156,7 +170,7 @@ export function AppointmentsView({ session, organization }: { session: Session; 
         <aside className="workspace-card cal-day">
           <header className="cal-day-head">
             <span className="eyebrow">Día seleccionado</span>
-            <strong>{new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: MADRID_TZ }).format(new Date(`${selectedDate}T12:00:00`))}</strong>
+            <strong>{capitalizeFirst(new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: MADRID_TZ }).format(new Date(`${selectedDate}T12:00:00`)))}</strong>
             <small>{selectedList.length ? `${selectedList.length} ${selectedList.length === 1 ? 'cita' : 'citas'}` : 'Sin citas'}</small>
           </header>
           <div className="cal-day-list">

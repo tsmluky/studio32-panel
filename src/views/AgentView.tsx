@@ -16,6 +16,22 @@ function changeRequestHref(orgName: string) {
   return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Cambio en mi asistente · ${orgName}`)}&body=${encodeURIComponent(message)}`
 }
 
+// El FAQ llega como texto plano ("- ¿Pregunta? Respuesta."). Lo separamos en
+// pares para presentarlo legible en vez de volcar el bloque entero.
+function parseFaq(raw: string) {
+  return raw
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => /^[-*]\s+/.test(line))
+    .map(line => line.replace(/^[-*]\s+/, ''))
+    .map(entry => {
+      const mark = entry.indexOf('?')
+      if (mark === -1) return { question: entry, answer: '' }
+      return { question: entry.slice(0, mark + 1).trim(), answer: entry.slice(mark + 1).trim() }
+    })
+    .filter(item => item.question)
+}
+
 const CAPABILITIES = [
   'Atiende por WhatsApp con el tono de tu clínica.',
   'Resuelve las dudas frecuentes de tus pacientes al momento.',
@@ -32,6 +48,8 @@ export function AgentView({ session, organization }: { session: Session; organiz
   }, [session, organization.id])
   useEffect(() => { void load() }, [load])
 
+  const faqItems = config?.faq ? parseFaq(config.faq) : []
+
   return <section className="workspace">
     <ViewHeader eyebrow={organization.name} title="Tu asistente" description="Así atiende tu asistente. Studio32 mantiene la configuración para cuidar la calidad de cada respuesta." />
     {error && <ViewError>{error}</ViewError>}
@@ -42,7 +60,11 @@ export function AgentView({ session, organization }: { session: Session; organiz
       </article>
       <article className="workspace-card agent-block">
         <span className="eyebrow">Preguntas que sabe responder</span>
-        {config?.faq ? <p>{config.faq}</p> : <p className="agent-empty">Aún no hay preguntas frecuentes cargadas. Las preparamos contigo en la puesta en marcha.</p>}
+        {faqItems.length
+          ? <dl className="agent-faq">{faqItems.map((item, index) => <div key={`${index}-${item.question}`}><dt>{item.question}</dt>{item.answer && <dd>{item.answer}</dd>}</div>)}</dl>
+          : config?.faq
+            ? <p>{config.faq}</p>
+            : <p className="agent-empty">Aún no hay preguntas frecuentes cargadas. Las preparamos contigo en la puesta en marcha.</p>}
       </article>
       <div className="agent-help">
         <span>¿Quieres cambiar algo? Nos encargamos nosotros y lo actualizamos por ti.</span>

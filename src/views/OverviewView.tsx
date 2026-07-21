@@ -58,9 +58,9 @@ export function OverviewView({ session, organization }: { session: Session; orga
     {error && <ViewError>{error}</ViewError>}
     <div className="metric-grid">
       <article><span>Conversaciones abiertas</span><strong>{metrics?.open_conversations ?? '—'}</strong><small>Atención en curso</small></article>
-      <article><span>En control humano</span><strong>{metrics?.human_conversations ?? '—'}</strong><small>Responde el equipo</small></article>
-      <article><span>Citas de hoy</span><strong>{metrics?.appointments_today ?? '—'}</strong><small>Sin canceladas</small></article>
-      <article><span>Atención requerida</span><strong>{metrics?.pending_handoffs ?? '—'}</strong><small>Handoffs pendientes</small></article>
+      <article className={metrics?.human_conversations ? 'tone-amber' : 'tone-quiet'}><span>En control humano</span><strong>{metrics?.human_conversations ?? '—'}</strong><small>Responde el equipo</small></article>
+      <article className="tone-blue"><span>Citas de hoy</span><strong>{metrics?.appointments_today ?? '—'}</strong><small>Sin canceladas</small></article>
+      <article className={metrics?.pending_handoffs ? 'tone-rose' : 'tone-quiet'}><span>Atención requerida</span><strong>{metrics?.pending_handoffs ?? '—'}</strong><small>{metrics?.pending_handoffs ? 'Handoffs pendientes' : 'Nada pendiente'}</small></article>
     </div>
     <div className="overview-grid">
       <article className="workspace-card"><div className="card-heading"><div><span className="eyebrow">Agenda</span><h2>Próximas citas</h2></div></div>
