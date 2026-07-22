@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { agentApi } from '../api'
 import type { AgentConfig, Organization } from '../types'
-import { ViewError, ViewHeader } from './shared'
+import { LoadingLine, ViewError, ViewHeader } from './shared'
 
 // Canal de soporte para "Solicitar un cambio". La configuración del asistente la
 // mantiene Studio32 (calidad), así que el cliente no edita: pide el cambio y lo
@@ -42,9 +42,11 @@ const CAPABILITIES = [
 export function AgentView({ session, organization }: { session: Session; organization: Organization }) {
   const [config, setConfig] = useState<AgentConfig | null>(null)
   const [error, setError] = useState('')
+  const [loaded, setLoaded] = useState(false)
   const load = useCallback(async () => {
     try { setConfig((await agentApi.agentConfig(session, organization.id)).config); setError('') }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'No se pudo cargar la configuración.') }
+    finally { setLoaded(true) }
   }, [session, organization.id])
   useEffect(() => { void load() }, [load])
 
@@ -64,7 +66,9 @@ export function AgentView({ session, organization }: { session: Session; organiz
           ? <dl className="agent-faq">{faqItems.map((item, index) => <div key={`${index}-${item.question}`}><dt>{item.question}</dt>{item.answer && <dd>{item.answer}</dd>}</div>)}</dl>
           : config?.faq
             ? <p>{config.faq}</p>
-            : <p className="agent-empty">Aún no hay preguntas frecuentes cargadas. Las preparamos contigo en la puesta en marcha.</p>}
+            : loaded
+              ? <p className="agent-empty">Aún no hay preguntas frecuentes cargadas. Las preparamos contigo en la puesta en marcha.</p>
+              : <LoadingLine />}
       </article>
       <div className="agent-help">
         <span>¿Quieres cambiar algo? Nos encargamos nosotros y lo actualizamos por ti.</span>

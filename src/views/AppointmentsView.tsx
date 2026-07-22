@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js'
 import { agentApi } from '../api'
 import { supabase } from '../supabase'
 import type { Appointment, Organization } from '../types'
-import { formatDateTime, RealtimeStatus, ViewError, ViewHeader } from './shared'
+import { formatDateTime, LoadingLine, RealtimeStatus, ViewError, ViewHeader } from './shared'
 
 const MADRID_TZ = 'Europe/Madrid'
 
@@ -58,6 +58,7 @@ export function AppointmentsView({ session, organization }: { session: Session; 
   const [selectedDate, setSelectedDate] = useState(madridDateKey())
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [error, setError] = useState('')
+  const [loaded, setLoaded] = useState(false)
   const [confirming, setConfirming] = useState('')
   const [busy, setBusy] = useState('')
 
@@ -77,6 +78,7 @@ export function AppointmentsView({ session, organization }: { session: Session; 
   const load = useCallback(async () => {
     try { setAppointments((await agentApi.appointments(session, organization.id, range.from, range.to)).appointments); setError('') }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'No se pudo cargar la agenda.') }
+    finally { setLoaded(true) }
   }, [session, organization.id, range.from, range.to])
   useEffect(() => { void load() }, [load])
   useEffect(() => {
@@ -183,7 +185,7 @@ export function AppointmentsView({ session, organization }: { session: Session; 
               </div>
               {canWrite && <button className={confirming === item.id ? 'danger-action confirm' : 'danger-action'} disabled={item.status === 'cancelled' || busy === item.id} onClick={() => cancel(item)}>{confirming === item.id ? 'Confirmar' : item.status === 'cancelled' ? 'Cancelada' : 'Cancelar'}</button>}
             </article>)}
-            {!selectedList.length && <p className="quiet-empty">No hay citas este día.</p>}
+            {!selectedList.length && (loaded ? <p className="quiet-empty">No hay citas este día.</p> : <LoadingLine />)}
           </div>
         </aside>
       </div>
@@ -196,7 +198,7 @@ export function AppointmentsView({ session, organization }: { session: Session; 
           <span><b className={`status-pill ${item.status}`}>{item.status}</b><small>{item.external_calendar_event_id ? 'Calendar conectado' : 'Agenda interna'}</small></span>
           {canWrite && <button className={confirming === item.id ? 'danger-action confirm' : 'danger-action'} disabled={item.status === 'cancelled' || busy === item.id} onClick={() => cancel(item)}>{confirming === item.id ? 'Confirmar' : item.status === 'cancelled' ? 'Cancelada' : 'Cancelar'}</button>}
         </div>)}
-        {!upcoming.length && <p className="quiet-empty">No hay citas en los próximos 30 días.</p>}
+        {!upcoming.length && (loaded ? <p className="quiet-empty">No hay citas en los próximos 30 días.</p> : <LoadingLine />)}
       </div>
     </article>}
   </section>

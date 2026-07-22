@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js'
 import { agentApi } from '../api'
 import { supabase } from '../supabase'
 import type { Organization, Summary } from '../types'
-import { formatDateTime, RealtimeStatus, ViewError, ViewHeader } from './shared'
+import { formatDateTime, LoadingLine, RealtimeStatus, ViewError, ViewHeader } from './shared'
 
 // Offset real de Europe/Madrid para una fecha dada (+02:00 en verano CEST,
 // +01:00 en invierno CET). Evita hardcodear el offset, que descuadraría la
@@ -38,9 +38,11 @@ function dayLabel(value: string) {
 export function OverviewView({ session, organization }: { session: Session; organization: Organization }) {
   const [data, setData] = useState<Summary | null>(null)
   const [error, setError] = useState('')
+  const [loaded, setLoaded] = useState(false)
   const load = useCallback(async () => {
     try { const range = madridDay(); setData(await agentApi.summary(session, organization.id, range.from, range.to)); setError('') }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'No se pudo cargar el resumen.') }
+    finally { setLoaded(true) }
   }, [session, organization.id])
 
   useEffect(() => { void load() }, [load])
@@ -64,7 +66,7 @@ export function OverviewView({ session, organization }: { session: Session; orga
     </div>
     <div className="overview-grid">
       <article className="workspace-card"><div className="card-heading"><div><span className="eyebrow">Agenda</span><h2>Próximas citas</h2></div></div>
-        <div className="compact-list">{data?.next_appointments.length ? data.next_appointments.map(item => <div key={item.id} className="compact-row"><time className="compact-when"><small>{dayLabel(item.starts_at)}</small><strong>{formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })}</strong></time><span><strong>{item.contact?.name || item.contact?.phone || 'Paciente'}</strong><small>{item.service?.name || 'Cita'}{item.resource_name ? ` · ${item.resource_name}` : ''}</small></span><b className={`status-pill ${item.status}`}>{item.status}</b></div>) : <p className="quiet-empty">No hay próximas citas registradas.</p>}</div>
+        <div className="compact-list">{data?.next_appointments.length ? data.next_appointments.map(item => <div key={item.id} className="compact-row"><time className="compact-when"><small>{dayLabel(item.starts_at)}</small><strong>{formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })}</strong></time><span><strong>{item.contact?.name || item.contact?.phone || 'Paciente'}</strong><small>{item.service?.name || 'Cita'}{item.resource_name ? ` · ${item.resource_name}` : ''}</small></span><b className={`status-pill ${item.status}`}>{item.status}</b></div>) : loaded ? <p className="quiet-empty">No hay próximas citas registradas.</p> : <LoadingLine />}</div>
       </article>
       <article className="workspace-card focus-card"><span className="eyebrow">Sistema</span><h2>Recepción bajo control</h2><p>Las conversaciones, citas y cambios de conocimiento quedan asociados a {organization.name} y aislados mediante RLS.</p><div className="system-line"><i />Agente y panel conectados</div></article>
     </div>
