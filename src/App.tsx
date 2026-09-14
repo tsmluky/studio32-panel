@@ -5,6 +5,7 @@ import { supabase } from './supabase'
 import type { Conversation, CurrentUser, Message, Organization, Summary } from './types'
 import { OverviewView } from './views/OverviewView'
 import { AppointmentsView } from './views/AppointmentsView'
+import { clearGoogleReturn, readGoogleReturn } from './googleReturn'
 import { ServicesView } from './views/ServicesView'
 import { AgentView } from './views/AgentView'
 import { Icon } from './icons'
@@ -159,7 +160,9 @@ function ConversationDetail({ session, organization, conversation, messages, bus
 
 function Dashboard({ session }: { session: Session }) {
   const [me, setMe] = useState<CurrentUser | null>(null)
-  const [organizationId, setOrganizationId] = useState(localStorage.getItem('studio32:organization') || '')
+  // Al volver de conectar Google Calendar: abrir Citas del negocio que se conectó.
+  const [googleNotice] = useState(() => readGoogleReturn(window.location.search))
+  const [organizationId, setOrganizationId] = useState(googleNotice?.organizationId || localStorage.getItem('studio32:organization') || '')
   const [filter, setFilter] = useState<Filter>('active')
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selected, setSelected] = useState<Conversation | null>(null)
@@ -167,7 +170,8 @@ function Dashboard({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true)
   const [detailBusy, setDetailBusy] = useState(false)
   const [error, setError] = useState('')
-  const [section, setSection] = useState<Section>('overview')
+  const [section, setSection] = useState<Section>(googleNotice ? 'appointments' : 'overview')
+  useEffect(() => { if (googleNotice) clearGoogleReturn() }, [googleNotice])
 
   const [metrics, setMetrics] = useState<Summary['metrics'] | null>(null)
   const organization = me?.organizations.find(item => item.id === organizationId) || me?.organizations[0]
@@ -232,7 +236,7 @@ function Dashboard({ session }: { session: Session }) {
       <div className="sidebar-user"><span className="avatar small">{initials(me.user.email)}</span><span><strong>{me.user.email.split('@')[0]}</strong><small>{organization?.role}</small></span><button onClick={() => supabase.auth.signOut()} aria-label="Cerrar sesión"><Icon name="signout" size={18} /></button></div>
     </aside>
     {section === 'overview' && <OverviewView session={session} organization={organization!} />}
-    {section === 'appointments' && <AppointmentsView session={session} organization={organization!} />}
+    {section === 'appointments' && <AppointmentsView session={session} organization={organization!} googleNotice={googleNotice} />}
     {section === 'services' && <ServicesView session={session} organization={organization!} />}
     {section === 'agent' && <AgentView session={session} organization={organization!} />}
     {section === 'inbox' && <><section className="inbox-panel">

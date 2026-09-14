@@ -1,5 +1,5 @@
 import type { Session } from '@supabase/supabase-js'
-import type { AgentConfig, Appointment, Conversation, CurrentUser, Message, Service, Summary } from './types'
+import type { AgentConfig, Appointment, Conversation, CurrentUser, GoogleCalendarConnection, GoogleCalendarOption, GoogleCalendarStatus, Message, Service, Summary } from './types'
 
 const API_URL = String(import.meta.env.VITE_AGENT_API_URL || '').replace(/\/$/, '')
 
@@ -43,6 +43,16 @@ export const agentApi = {
     request<Summary>(session, `/summary?organization_id=${encodeURIComponent(organizationId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
   appointments: (session: Session, organizationId: string, from: string, to: string) =>
     request<{ appointments: Appointment[]; calendar?: { connected: boolean } }>(session, `/appointments?organization_id=${encodeURIComponent(organizationId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+  googleCalendar: (session: Session, organizationId: string) =>
+    request<GoogleCalendarStatus>(session, `/google-calendar?organization_id=${encodeURIComponent(organizationId)}`),
+  connectGoogleCalendar: (session: Session, organizationId: string) =>
+    request<{ url: string }>(session, '/google-calendar/connect', { method: 'POST', body: JSON.stringify({ organization_id: organizationId }) }),
+  googleCalendars: (session: Session, organizationId: string) =>
+    request<{ calendars: GoogleCalendarOption[] }>(session, `/google-calendar/calendars?organization_id=${encodeURIComponent(organizationId)}`),
+  selectGoogleCalendar: (session: Session, organizationId: string, calendarId: string) =>
+    request<{ connection: GoogleCalendarConnection }>(session, '/google-calendar/calendar', { method: 'POST', body: JSON.stringify({ organization_id: organizationId, calendar_id: calendarId }) }),
+  disconnectGoogleCalendar: (session: Session, organizationId: string) =>
+    request<{ connection: null }>(session, '/google-calendar/disconnect', { method: 'POST', body: JSON.stringify({ organization_id: organizationId }) }),
   cancelAppointment: (session: Session, appointmentId: string) =>
     request<{ appointment: Appointment }>(session, `/appointments/${appointmentId}/cancel`, { method: 'POST', body: '{}' }),
   services: (session: Session, organizationId: string) =>

@@ -140,6 +140,29 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .danger-action { border:1px solid #d6dbd5; border-radius:8px; padding:7px 9px; color:#7d5551; background:#fff; font-size:9px; font-weight:600; }.danger-action.confirm { color:#fff; background:#873f39; border-color:#873f39; }.danger-action:disabled { opacity:.45; cursor:not-allowed; }
 /* Citas · calendario */
 .cal-modebar { max-width:1280px; margin:0 auto 14px; }
+/* Conexión con Google Calendar (Citas). Sin conectar es la invitación; conectada se queda discreta. */
+.gcal-card { max-width:1280px; margin:0 auto 16px; padding:16px 18px; border:1px solid var(--edge); border-radius:15px; background:var(--surface); box-shadow:var(--shadow-sm); display:grid; gap:12px; }
+.gcal-card.is-connected { padding:12px 16px; box-shadow:none; background:var(--paper); }
+.gcal-card.needs-attention { border-color:#e5cfb0; background:var(--amber-soft); }
+.gcal-main { display:flex; align-items:center; gap:14px; }
+.gcal-mark { flex:none; width:38px; height:38px; border-radius:10px; display:grid; place-items:center; color:var(--blue); background:var(--blue-soft); font:700 17px/1 Manrope,sans-serif; }
+.gcal-text { display:grid; gap:3px; min-width:0; flex:1; }
+.gcal-text strong { font-size:14px; }
+.gcal-text small { color:var(--muted); font-size:13px; line-height:1.45; overflow-wrap:anywhere; }
+.gcal-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+.gcal-primary { border:0; border-radius:10px; padding:11px 16px; color:#f6f7f3; background:#1b2c20; font-size:13px; font-weight:600; white-space:nowrap; }
+.gcal-primary:disabled,.gcal-secondary:disabled { opacity:.55; cursor:not-allowed; }
+.gcal-secondary { border:1px solid var(--line); border-radius:8px; padding:7px 10px; color:var(--ink); background:#fff; font-size:12px; font-weight:600; }
+.gcal-notice { margin:0; padding:10px 12px; border-radius:9px; font-size:13px; line-height:1.45; }
+.gcal-notice.success { color:#2c5a3a; background:var(--green-soft); }
+.gcal-notice.warning { color:#6f4a1f; background:var(--amber-soft); }
+.gcal-hint { margin:0; color:var(--muted); font-size:12px; line-height:1.5; }
+.gcal-error { margin:0; color:#7d2929; font-size:12px; }
+.gcal-picker { display:grid; gap:6px; }
+.gcal-picker button { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:9px; background:#fff; text-align:left; font-size:13px; }
+.gcal-picker button.is-current { border-color:var(--green); background:var(--green-soft); }
+.gcal-picker small { color:var(--muted); font-size:11px; }
+@media (max-width:720px) { .gcal-main { flex-wrap:wrap; } .gcal-actions { width:100%; justify-content:stretch; } .gcal-actions button { flex:1; } }
 .cal-toggle { display:inline-flex; gap:2px; padding:3px; border:1px solid #dde1da; border-radius:999px; background:#f1f3ef; }
 .cal-toggle button { border:0; border-radius:999px; padding:8px 16px; color:#5c655c; background:transparent; font-size:11px; font-weight:600; }
 .cal-toggle button.active { color:#fff; background:#294c35; }

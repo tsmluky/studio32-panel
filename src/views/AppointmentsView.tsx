@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { agentApi } from '../api'
 import { appointmentDetail, appointmentOrigin, appointmentStatusLabel, appointmentTime, appointmentTitle, canCancelFromPanel } from '../appointments'
+import type { GoogleReturn } from '../googleReturn'
 import { supabase } from '../supabase'
+import { GoogleCalendarCard } from './GoogleCalendarCard'
 import type { Appointment, Organization } from '../types'
 import { formatDateTime, LoadingLine, RealtimeStatus, ViewError, ViewHeader } from './shared'
 
@@ -54,7 +56,7 @@ const hourFormat = (value: string, options: Intl.DateTimeFormatOptions) => forma
 // agente sí llegan al momento por la suscripción de la base de datos.
 const GOOGLE_REFRESH_MS = 60_000
 
-export function AppointmentsView({ session, organization }: { session: Session; organization: Organization }) {
+export function AppointmentsView({ session, organization, googleNotice = null }: { session: Session; organization: Organization; googleNotice?: GoogleReturn | null }) {
   const [mode, setMode] = useState<'calendar' | 'list'>('calendar')
   const [month, setMonth] = useState(madridDateKey().slice(0, 7))
   const [selectedDate, setSelectedDate] = useState(madridDateKey())
@@ -145,6 +147,8 @@ export function AppointmentsView({ session, organization }: { session: Session; 
   return <section className="workspace">
     <ViewHeader eyebrow={organization.name} title="Citas" description={calendarConnected ? 'La misma agenda que tenéis en Google Calendar: lo que apuntéis en el móvil aparece aquí, y lo que canceléis aquí desaparece del móvil.' : 'Agenda operativa de la clínica: calendario y próximas citas.'} action={<RealtimeStatus />} />
     {error && <ViewError>{error}</ViewError>}
+
+    <GoogleCalendarCard session={session} organization={organization} notice={googleNotice} onChange={load} />
 
     <div className="cal-modebar">
       <div className="cal-toggle" role="tablist" aria-label="Vista de la agenda">

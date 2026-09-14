@@ -90,6 +90,34 @@ export interface Appointment {
   all_day?: boolean
 }
 
+// Google Calendar conectado por la propia clínica (botón "Conectar Google Calendar").
+export interface GoogleCalendarConnection {
+  status: 'pending' | 'active' | 'error' | 'disabled'
+  google_email: string | null
+  calendar_id: string | null
+  calendar_name: string | null
+  timezone: string | null
+  connected_at: string | null
+  last_error: string | null
+}
+
+export interface GoogleCalendarStatus {
+  // El servidor tiene la conexión con Google activada.
+  available: boolean
+  // Este negocio se puede conectar (no es de demostración y tiene asistente).
+  supported: boolean
+  // Quien mira puede conectar o desconectar (dueño o admin).
+  can_manage: boolean
+  connection: GoogleCalendarConnection | null
+}
+
+export interface GoogleCalendarOption {
+  id: string
+  summary: string
+  timeZone: string | null
+  primary: boolean
+}
+
 export interface Summary {
   metrics: {
     open_conversations: number
