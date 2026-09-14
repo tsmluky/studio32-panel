@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { agentApi } from '../api'
+import { appointmentDetail, appointmentOrigin, appointmentStatusLabel, appointmentTime, appointmentTitle, canCancelFromPanel } from '../appointments'
 import { supabase } from '../supabase'
 import type { Appointment, Organization } from '../types'
 import { formatDateTime, LoadingLine, RealtimeStatus, ViewError, ViewHeader } from './shared'
@@ -46,11 +47,12 @@ function capitalizeFirst(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
-function appointmentLabel(item: Appointment) {
-  const parts = [item.service?.name || 'Cita']
-  if (item.contact?.name) parts.push(item.contact.name)
-  return parts.join(' · ')
-}
+const hourFormat = (value: string, options: Intl.DateTimeFormatOptions) => formatDateTime(value, options)
+
+// Cada cuánto se vuelve a mirar Google cuando el negocio lo tiene conectado. Los
+// cambios que hace la clínica en su móvil no avisan a nadie; los del panel y los del
+// agente sí llegan al momento por la suscripción de la base de datos.
+const GOOGLE_REFRESH_MS = 60_000
 
 export function AppointmentsView({ session, organization }: { session: Session; organization: Organization }) {
   const [mode, setMode] = useState<'calendar' | 'list'>('calendar')
@@ -61,6 +63,7 @@ export function AppointmentsView({ session, organization }: { session: Session; 
   const [loaded, setLoaded] = useState(false)
   const [confirming, setConfirming] = useState('')
   const [busy, setBusy] = useState('')
+  const [calendarConnected, setCalendarConnected] = useState(false)
 
   const days = useMemo(() => calendarMonthDays(month), [month])
 
@@ -76,7 +79,12 @@ export function AppointmentsView({ session, organization }: { session: Session; 
   }, [days])
 
   const load = useCallback(async () => {
-    try { setAppointments((await agentApi.appointments(session, organization.id, range.from, range.to)).appointments); setError('') }
+    try {
+      const result = await agentApi.appointments(session, organization.id, range.from, range.to)
+      setAppointments(result.appointments)
+      setCalendarConnected(Boolean(result.calendar?.connected))
+      setError('')
+    }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'No se pudo cargar la agenda.') }
     finally { setLoaded(true) }
   }, [session, organization.id, range.from, range.to])
@@ -85,6 +93,13 @@ export function AppointmentsView({ session, organization }: { session: Session; 
     const channel = supabase.channel(`appointments:${organization.id}`).on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter: `organization_id=eq.${organization.id}` }, load).subscribe()
     return () => { void supabase.removeChannel(channel) }
   }, [organization.id, load])
+  useEffect(() => {
+    if (!calendarConnected) return
+    const refreshIfVisible = () => { if (document.visibilityState === 'visible') void load() }
+    const timer = window.setInterval(refreshIfVisible, GOOGLE_REFRESH_MS)
+    document.addEventListener('visibilitychange', refreshIfVisible)
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', refreshIfVisible) }
+  }, [calendarConnected, load])
 
   const byDay = useMemo(() => {
     const map = new Map<string, Appointment[]>()
@@ -128,7 +143,7 @@ export function AppointmentsView({ session, organization }: { session: Session; 
   }
 
   return <section className="workspace">
-    <ViewHeader eyebrow={organization.name} title="Citas" description="Agenda operativa de la clínica: calendario y próximas citas." action={<RealtimeStatus />} />
+    <ViewHeader eyebrow={organization.name} title="Citas" description={calendarConnected ? 'La misma agenda que tenéis en Google Calendar: lo que apuntéis en el móvil aparece aquí, y lo que canceléis aquí desaparece del móvil.' : 'Agenda operativa de la clínica: calendario y próximas citas.'} action={<RealtimeStatus />} />
     {error && <ViewError>{error}</ViewError>}
 
     <div className="cal-modebar">
@@ -162,7 +177,7 @@ export function AppointmentsView({ session, organization }: { session: Session; 
               return <button key={day} type="button" className={classes.join(' ')} onClick={() => setSelectedDate(day)} aria-label={`${dayName}${dayCount}`} aria-pressed={day === selectedDate}>
                 <strong>{Number(day.slice(-2))}</strong>
                 <span className="cal-cell-items">
-                  {items.slice(0, 3).map(item => <small key={item.id} className={`cal-chip ${item.status}`} title={`${formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })} · ${appointmentLabel(item)}`}>{formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })}</small>)}
+                  {items.slice(0, 3).map(item => <small key={item.id} className={`cal-chip ${item.status}${item.source === 'calendar' ? ' from-calendar' : ''}`} title={`${appointmentTime(item, hourFormat)} · ${appointmentTitle(item)}`}>{item.all_day ? 'Día' : formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })}</small>)}
                   {items.length > 3 && <small className="cal-more">+{items.length - 3}</small>}
                 </span>
               </button>
@@ -176,28 +191,35 @@ export function AppointmentsView({ session, organization }: { session: Session; 
             <small>{selectedList.length ? `${selectedList.length} ${selectedList.length === 1 ? 'cita' : 'citas'}` : 'Sin citas'}</small>
           </header>
           <div className="cal-day-list">
-            {selectedList.map(item => <article className="cal-day-item" key={item.id}>
-              <time>{formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })}–{formatDateTime(item.ends_at, { hour: '2-digit', minute: '2-digit' })}</time>
-              <div className="cal-day-item-body">
-                <strong>{item.contact?.name || 'Paciente'}</strong>
-                <small>{item.service?.name || 'Cita'} · {item.contact?.phone || item.contact?.email || 'Sin contacto'}</small>
-                <span className="cal-day-item-foot"><b className={`status-pill ${item.status}`}>{item.status}</b><small>{item.external_calendar_event_id ? 'Calendar conectado' : 'Agenda interna'}</small></span>
-              </div>
-              {canWrite && <button className={confirming === item.id ? 'danger-action confirm' : 'danger-action'} disabled={item.status === 'cancelled' || busy === item.id} onClick={() => cancel(item)}>{confirming === item.id ? 'Confirmar' : item.status === 'cancelled' ? 'Cancelada' : 'Cancelar'}</button>}
-            </article>)}
+            {selectedList.map(item => {
+              const origin = appointmentOrigin(item)
+              return <article className="cal-day-item" key={item.id}>
+                <time>{appointmentTime(item, hourFormat)}</time>
+                <div className="cal-day-item-body">
+                  <strong>{appointmentTitle(item)}</strong>
+                  <small>{appointmentDetail(item)}</small>
+                  <span className="cal-day-item-foot"><b className={`status-pill ${item.status}`}>{appointmentStatusLabel(item)}</b>{origin && <small className={`origin-note ${origin.tone}`}>{origin.label}</small>}</span>
+                </div>
+                {canWrite && item.source !== 'calendar' && <button className={confirming === item.id ? 'danger-action confirm' : 'danger-action'} disabled={!canCancelFromPanel(item) || busy === item.id} onClick={() => cancel(item)}>{confirming === item.id ? 'Confirmar' : item.status === 'cancelled' ? 'Cancelada' : 'Cancelar'}</button>}
+              </article>
+            })}
             {!selectedList.length && (loaded ? <p className="quiet-empty">No hay citas este día.</p> : <LoadingLine />)}
           </div>
         </aside>
       </div>
     </> : <article className="workspace-card table-card">
       <div className="appointment-table"><div className="table-head"><span>Fecha y hora</span><span>Paciente</span><span>Servicio</span><span>Estado</span><span /></div>
-        {upcoming.map(item => <div className="appointment-row" key={item.id}>
-          <time><strong>{formatDateTime(item.starts_at, { weekday: 'short', day: '2-digit', month: 'short' })}</strong><small>{formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })}–{formatDateTime(item.ends_at, { hour: '2-digit', minute: '2-digit' })}</small></time>
-          <span><strong>{item.contact?.name || 'Paciente'}</strong><small>{item.contact?.phone || item.contact?.email || 'Sin contacto'}</small></span>
-          <span><strong>{item.service?.name || 'Cita'}</strong><small>{item.resource_name || 'Equipo de clínica'}</small></span>
-          <span><b className={`status-pill ${item.status}`}>{item.status}</b><small>{item.external_calendar_event_id ? 'Calendar conectado' : 'Agenda interna'}</small></span>
-          {canWrite && <button className={confirming === item.id ? 'danger-action confirm' : 'danger-action'} disabled={item.status === 'cancelled' || busy === item.id} onClick={() => cancel(item)}>{confirming === item.id ? 'Confirmar' : item.status === 'cancelled' ? 'Cancelada' : 'Cancelar'}</button>}
-        </div>)}
+        {upcoming.map(item => {
+          const origin = appointmentOrigin(item)
+          const fromCalendar = item.source === 'calendar'
+          return <div className="appointment-row" key={item.id}>
+            <time><strong>{formatDateTime(item.starts_at, { weekday: 'short', day: '2-digit', month: 'short' })}</strong><small>{appointmentTime(item, hourFormat)}</small></time>
+            <span><strong>{appointmentTitle(item)}</strong><small>{fromCalendar ? 'Apuntada en Google Calendar' : item.contact?.phone || item.contact?.email || 'Sin contacto'}</small></span>
+            <span><strong>{fromCalendar ? '—' : item.service?.name || 'Cita'}</strong><small>{item.resource_name || 'Equipo de clínica'}</small></span>
+            <span><b className={`status-pill ${item.status}`}>{appointmentStatusLabel(item)}</b>{origin && <small className={`origin-note ${origin.tone}`}>{origin.label}</small>}</span>
+            {canWrite && (fromCalendar ? <span /> : <button className={confirming === item.id ? 'danger-action confirm' : 'danger-action'} disabled={!canCancelFromPanel(item) || busy === item.id} onClick={() => cancel(item)}>{confirming === item.id ? 'Confirmar' : item.status === 'cancelled' ? 'Cancelada' : 'Cancelar'}</button>)}
+          </div>
+        })}
         {!upcoming.length && (loaded ? <p className="quiet-empty">No hay citas en los próximos 30 días.</p> : <LoadingLine />)}
       </div>
     </article>}

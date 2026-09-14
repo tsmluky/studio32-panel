@@ -42,7 +42,7 @@ export const agentApi = {
   summary: (session: Session, organizationId: string, from: string, to: string) =>
     request<Summary>(session, `/summary?organization_id=${encodeURIComponent(organizationId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
   appointments: (session: Session, organizationId: string, from: string, to: string) =>
-    request<{ appointments: Appointment[] }>(session, `/appointments?organization_id=${encodeURIComponent(organizationId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+    request<{ appointments: Appointment[]; calendar?: { connected: boolean } }>(session, `/appointments?organization_id=${encodeURIComponent(organizationId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
   cancelAppointment: (session: Session, appointmentId: string) =>
     request<{ appointment: Appointment }>(session, `/appointments/${appointmentId}/cancel`, { method: 'POST', body: '{}' }),
   services: (session: Session, organizationId: string) =>

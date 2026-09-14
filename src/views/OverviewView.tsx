@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { agentApi } from '../api'
+import { appointmentStatusLabel, appointmentTitle } from '../appointments'
 import { supabase } from '../supabase'
 import type { Organization, Summary } from '../types'
 import { formatDateTime, LoadingLine, RealtimeStatus, ViewError, ViewHeader } from './shared'
@@ -66,7 +67,7 @@ export function OverviewView({ session, organization }: { session: Session; orga
     </div>
     <div className="overview-grid">
       <article className="workspace-card"><div className="card-heading"><div><span className="eyebrow">Agenda</span><h2>Próximas citas</h2></div></div>
-        <div className="compact-list">{data?.next_appointments.length ? data.next_appointments.map(item => <div key={item.id} className="compact-row"><time className="compact-when"><small>{dayLabel(item.starts_at)}</small><strong>{formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })}</strong></time><span><strong>{item.contact?.name || item.contact?.phone || 'Paciente'}</strong><small>{item.service?.name || 'Cita'}{item.resource_name ? ` · ${item.resource_name}` : ''}</small></span><b className={`status-pill ${item.status}`}>{item.status}</b></div>) : loaded ? <p className="quiet-empty">No hay próximas citas registradas.</p> : <LoadingLine />}</div>
+        <div className="compact-list">{data?.next_appointments.length ? data.next_appointments.map(item => <div key={item.id} className="compact-row"><time className="compact-when"><small>{dayLabel(item.starts_at)}</small><strong>{formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })}</strong></time><span><strong>{appointmentTitle(item)}</strong><small>{item.source === 'calendar' ? 'Apuntada en Google Calendar' : `${item.service?.name || 'Cita'}${item.resource_name ? ` · ${item.resource_name}` : ''}`}</small></span><b className={`status-pill ${item.status}`}>{appointmentStatusLabel(item)}</b></div>) : loaded ? <p className="quiet-empty">No hay próximas citas registradas.</p> : <LoadingLine />}</div>
       </article>
       <article className="workspace-card focus-card"><span className="eyebrow">Sistema</span><h2>Recepción bajo control</h2><p>Las conversaciones, citas y cambios de conocimiento quedan asociados a {organization.name} y aislados mediante RLS.</p><div className="system-line"><i />Agente y panel conectados</div></article>
     </div>

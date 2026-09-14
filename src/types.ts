@@ -65,9 +65,15 @@ export interface Service {
   updated_at: string
 }
 
+// De dónde sale una cita cuando el negocio tiene Google Calendar conectado:
+// 'agent' la reservó el asistente, 'calendar' la apuntó la clínica en su calendario,
+// 'panel_only' solo existe en la base de datos y no en la agenda real.
+export type AppointmentSource = 'agent' | 'calendar' | 'panel_only'
+
 export interface Appointment {
+  // Las apuntadas en Google sin ficha llegan con id 'gcal:<evento>'.
   id: string
-  contact_id: string
+  contact_id: string | null
   conversation_id: string | null
   service_id: string | null
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
@@ -79,6 +85,9 @@ export interface Appointment {
   external_calendar_event_id: string | null
   contact: Contact | null
   service: Pick<Service, 'id' | 'name' | 'duration_minutes' | 'price_amount' | 'currency'> | null
+  source?: AppointmentSource
+  title?: string | null
+  all_day?: boolean
 }
 
 export interface Summary {
