@@ -61,7 +61,7 @@ function Login() {
       <div className="story-copy">
         <span className="eyebrow">Agent Platform</span>
         <h1>Recepción digital,<br />bajo control.</h1>
-        <p>Conversaciones, citas y atención humana en un solo espacio operativo.</p>
+        <p>Conversaciones, citas y atención humana, todo en el mismo panel.</p>
       </div>
       <p className="story-foot">Digital Systems · Valencia</p>
     </section>
@@ -69,12 +69,12 @@ function Login() {
       <form className="login-card" onSubmit={submit}>
         <span className="eyebrow">Acceso privado</span>
         <h2>Entrar al panel</h2>
-        <p>Utiliza las credenciales asignadas a tu organización.</p>
+        <p>Entra con el acceso que te hemos creado para tu negocio.</p>
         <label>Email<input type="email" required autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="tu@correo.es" /></label>
         <label>Contraseña<input type="password" required autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••••••" /></label>
         {error && <div className="form-error" role="alert">{error}</div>}
         <button className="primary-button" disabled={loading}>{loading ? 'Comprobando…' : 'Acceder'}</button>
-        <small>Acceso protegido mediante Supabase Auth.</small>
+        <small>Solo tu equipo puede entrar aquí.</small>
       </form>
     </section>
   </main>
@@ -95,7 +95,7 @@ function ConversationList({ conversations, selectedId, onSelect }: { conversatio
           <span className="conversation-line"><strong>{title}</strong><time>{relativeTime(conversation.last_message_at)}</time></span>
           <span className="conversation-preview">{conversation.subject || 'Abrir conversación'}</span>
           <span className="badges">
-            <span className={`mode-badge ${conversation.control_mode}`}>{conversation.control_mode === 'agent' ? 'Agente' : conversation.control_mode === 'human' ? 'Humano' : 'Pausado'}</span>
+            <span className={`mode-badge ${conversation.control_mode}`}>{conversation.control_mode === 'agent' ? 'Asistente' : conversation.control_mode === 'human' ? 'Humano' : 'Pausado'}</span>
             {conversation.status === 'resolved' && <span className="status-badge">Resuelta</span>}
           </span>
         </span>
@@ -108,7 +108,7 @@ function MessageBubble({ message }: { message: Message }) {
   const inbound = message.direction === 'inbound'
   return <article className={`message ${inbound ? 'inbound' : 'outbound'} ${message.sender_type}`}>
     <p>{message.body}</p>
-    <footer><span>{message.sender_type === 'agent' ? 'Agente' : message.sender_type === 'human' ? 'Equipo' : inbound ? 'Cliente' : 'Sistema'}</span><time>{new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit' }).format(new Date(message.occurred_at))}</time></footer>
+    <footer><span>{message.sender_type === 'agent' ? 'Asistente' : message.sender_type === 'human' ? 'Equipo' : inbound ? 'Cliente' : 'Sistema'}</span><time>{new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit' }).format(new Date(message.occurred_at))}</time></footer>
   </article>
 }
 
@@ -145,7 +145,7 @@ function ConversationDetail({ session, organization, conversation, messages, bus
         {conversation.status !== 'resolved' && <button className="resolve-btn" aria-label="Resolver conversación" disabled={!canWrite || !!action} onClick={() => run('resolve', () => agentApi.resolve(session, conversation.id))}><Icon name="check" size={14} />Resolver</button>}
       </div>
     </header>
-    <div className="control-strip"><span className={`control-dot ${conversation.control_mode}`} />{conversation.control_mode === 'agent' ? 'El agente responde automáticamente' : 'El agente está pausado; responde el equipo'}<button onClick={onRefresh}>Actualizar</button></div>
+    <div className="control-strip"><span className={`control-dot ${conversation.control_mode}`} />{conversation.control_mode === 'agent' ? 'El asistente responde automáticamente' : 'El asistente está pausado; responde el equipo'}<button onClick={onRefresh}>Actualizar</button></div>
     <div className="messages" aria-live="polite">
       {busy && !messages.length ? <div className="loading-line">Cargando historial…</div> : messages.map(message => <MessageBubble key={message.id} message={message} />)}
       {!busy && !messages.length && <EmptyState>Esta conversación todavía no contiene mensajes.</EmptyState>}
@@ -215,9 +215,9 @@ function Dashboard({ session }: { session: Session }) {
     void loadInbox(true)
   }
 
-  if (loading && !me) return <div className="app-loading"><span className="brand-mark">32</span><p>Preparando el espacio operativo…</p></div>
+  if (loading && !me) return <div className="app-loading"><span className="brand-mark">32</span><p>Preparando tu panel…</p></div>
   if (!me) return <div className="app-loading"><span className="brand-mark">32</span><h2>No se pudo abrir el panel</h2><p>{error || 'La sesión no se pudo validar.'}</p><button onClick={() => window.location.reload()}>Reintentar</button><button onClick={() => supabase.auth.signOut()}>Cerrar sesión</button></div>
-  if (!me.organizations.length) return <div className="app-loading"><span className="brand-mark">32</span><h2>Sin organización asignada</h2><p>Tu usuario existe, pero todavía no pertenece a ningún negocio.</p><button onClick={() => supabase.auth.signOut()}>Cerrar sesión</button></div>
+  if (!me.organizations.length) return <div className="app-loading"><span className="brand-mark">32</span><h2>Sin negocio asignado</h2><p>Tu usuario existe, pero todavía no pertenece a ningún negocio. Escríbenos y lo enlazamos.</p><button onClick={() => supabase.auth.signOut()}>Cerrar sesión</button></div>
 
   return <main className={`app-shell section-${section}`}>
     <header className="mobile-topbar">
@@ -228,7 +228,7 @@ function Dashboard({ session }: { session: Session }) {
       <div className="brand-lockup compact"><span className="brand-mark">32</span><span>Studio32</span></div>
       <nav>
         <button className={section === 'overview' ? 'active' : ''} aria-label="Resumen" onClick={() => setSection('overview')}><Icon name="overview" /><span>Resumen</span></button>
-        <button className={section === 'inbox' ? 'active' : ''} aria-label="Conversaciones" onClick={() => setSection('inbox')}><Icon name="inbox" /><span>Inbox</span></button>
+        <button className={section === 'inbox' ? 'active' : ''} aria-label="Conversaciones" onClick={() => setSection('inbox')}><Icon name="inbox" /><span>Chats</span></button>
         <button className={section === 'appointments' ? 'active' : ''} aria-label="Citas" onClick={() => setSection('appointments')}><Icon name="appointments" /><span>Citas</span></button>
         <button className={section === 'services' ? 'active' : ''} aria-label="Servicios" onClick={() => setSection('services')}><Icon name="services" /><span>Servicios</span></button>
         <button className={section === 'agent' ? 'active' : ''} aria-label="Asistente" onClick={() => setSection('agent')}><Icon name="agent" /><span>Asistente</span></button>
@@ -242,7 +242,7 @@ function Dashboard({ session }: { session: Session }) {
     {section === 'inbox' && <><section className="inbox-panel">
       <header className="inbox-header">
         <div><span className="eyebrow">Recepción</span><h1>Conversaciones</h1></div>
-        <select value={organization?.id} onChange={event => changeOrganization(event.target.value)} aria-label="Organización">{me.organizations.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+        <select value={organization?.id} onChange={event => changeOrganization(event.target.value)} aria-label="Negocio">{me.organizations.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
       </header>
       <div className="summary-row"><article><span>Abiertas</span><strong>{metrics?.open_conversations ?? conversations.filter(item => item.status === 'open').length}</strong></article><article><span>En humano</span><strong>{metrics?.human_conversations ?? conversations.filter(item => item.control_mode === 'human' && item.status !== 'resolved').length}</strong></article><article><span>Última actividad</span><strong className="small-stat">{relativeTime(lastActivity)}</strong></article></div>
       <div className="filter-row"><button className={filter === 'active' ? 'active' : ''} onClick={() => setFilter('active')}>Activas</button><button className={filter === 'human' ? 'active' : ''} onClick={() => setFilter('human')}>En humano</button><button className={filter === 'resolved' ? 'active' : ''} onClick={() => setFilter('resolved')}>Resueltas</button><button className="refresh-button" onClick={() => loadInbox()} aria-label="Actualizar"><Icon name="refresh" size={16} /></button></div>

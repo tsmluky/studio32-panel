@@ -57,19 +57,19 @@ export function OverviewView({ session, organization }: { session: Session; orga
 
   const metrics = data?.metrics
   return <section className="workspace">
-    <ViewHeader eyebrow={organization.name} title="Resumen operativo" description="Lo que requiere atención hoy, sin ruido." action={<RealtimeStatus />} />
+    <ViewHeader eyebrow={organization.name} title="Resumen" description="Lo que requiere atención hoy, sin ruido." action={<RealtimeStatus />} />
     {error && <ViewError>{error}</ViewError>}
     <div className="metric-grid">
       <article><span>Conversaciones abiertas</span><strong>{metrics?.open_conversations ?? '—'}</strong><small>Atención en curso</small></article>
       <article className={metrics?.human_conversations ? 'tone-amber' : 'tone-quiet'}><span>En control humano</span><strong>{metrics?.human_conversations ?? '—'}</strong><small>Responde el equipo</small></article>
       <article className="tone-blue"><span>Citas de hoy</span><strong>{metrics?.appointments_today ?? '—'}</strong><small>Sin canceladas</small></article>
-      <article className={metrics?.pending_handoffs ? 'tone-rose' : 'tone-quiet'}><span>Atención requerida</span><strong>{metrics?.pending_handoffs ?? '—'}</strong><small>{metrics?.pending_handoffs ? 'Handoffs pendientes' : 'Nada pendiente'}</small></article>
+      <article className={metrics?.pending_handoffs ? 'tone-rose' : 'tone-quiet'}><span>Atención requerida</span><strong>{metrics?.pending_handoffs ?? '—'}</strong><small>{metrics?.pending_handoffs ? 'A la espera de una persona' : 'Nada pendiente'}</small></article>
     </div>
     <div className="overview-grid">
       <article className="workspace-card"><div className="card-heading"><div><span className="eyebrow">Agenda</span><h2>Próximas citas</h2></div></div>
         <div className="compact-list">{data?.next_appointments.length ? data.next_appointments.map(item => <div key={item.id} className="compact-row"><time className="compact-when"><small>{dayLabel(item.starts_at)}</small><strong>{formatDateTime(item.starts_at, { hour: '2-digit', minute: '2-digit' })}</strong></time><span><strong>{appointmentTitle(item)}</strong><small>{item.source === 'calendar' ? 'Apuntada en Google Calendar' : `${item.service?.name || 'Cita'}${item.resource_name ? ` · ${item.resource_name}` : ''}`}</small></span><b className={`status-pill ${item.status}`}>{appointmentStatusLabel(item)}</b></div>) : loaded ? <p className="quiet-empty">No hay próximas citas registradas.</p> : <LoadingLine />}</div>
       </article>
-      <article className="workspace-card focus-card"><span className="eyebrow">Sistema</span><h2>Recepción bajo control</h2><p>Las conversaciones, citas y cambios de conocimiento quedan asociados a {organization.name} y aislados mediante RLS.</p><div className="system-line"><i />Agente y panel conectados</div></article>
+      <article className="workspace-card focus-card"><span className="eyebrow">Sistema</span><h2>Recepción bajo control</h2><p>Todo lo de {organization.name} —conversaciones, citas y lo que sabe tu asistente— está aislado: nadie fuera de tu equipo puede verlo.</p><div className="system-line"><i />Asistente y panel conectados</div></article>
     </div>
   </section>
 }

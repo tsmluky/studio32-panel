@@ -40,7 +40,7 @@ export function ServicesView({ session, organization }: { session: Session; orga
 
   const canWrite = organization.role !== 'viewer'
   return <section className="workspace">
-    <ViewHeader eyebrow={organization.name} title="Servicios" description="La información guardada aquí alimenta la siguiente conversación del agente." action={<RealtimeStatus />} />
+    <ViewHeader eyebrow={organization.name} title="Servicios" description="La información guardada aquí alimenta la siguiente conversación del asistente." action={<RealtimeStatus />} />
     {error && <ViewError>{error}</ViewError>}
     <div className="settings-grid"><article className="workspace-card service-list"><div className="card-heading"><span className="eyebrow">Catálogo</span><strong>{loaded ? `${services.length} servicios` : ''}</strong></div>{!loaded && !services.length && <LoadingLine />}{services.map(item => <button key={item.id} className={selected?.id === item.id ? 'active' : ''} onClick={() => selectService(item)}><span><strong>{item.name}</strong><small>{item.duration_minutes || '—'} min · {item.price_amount === null ? 'Consultar' : item.price_amount === 0 ? 'Gratis' : `${item.price_amount} ${item.currency}`}</small></span><i className={item.active ? 'on' : ''} /></button>)}</article>
       <form ref={editorRef} className="workspace-card editor-card" onSubmit={save}>{selected ? <><div className="card-heading"><div><span className="eyebrow">Edición</span><h2>{selected.name}</h2></div><label className="toggle-field"><input type="checkbox" checked={selected.active} disabled={!canWrite} onChange={event => field('active', event.target.checked)} />Activo</label></div>

@@ -35,7 +35,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .brand-lockup.compact>span:last-child { display:none; }
 .sidebar nav { display:grid; gap:8px; width:100%; }
 .sidebar nav button { width:100%; min-height:48px; border:0; border-radius:11px; color:#89958b; background:transparent; display:grid; place-items:center; gap:2px; font-size:18px; }
-.sidebar nav button span { font-size:8px; }
+.sidebar nav button span { font-size:10.5px; }
 .sidebar nav button.active { color:#edf1ed; background:#28342b; }
 .sidebar nav button:disabled { cursor:not-allowed; opacity:.42; }
 .sidebar-user { margin-top:auto; display:grid; justify-items:center; gap:8px; }
@@ -68,7 +68,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .conversation-line time { white-space:nowrap; color:#939b94; font-size:9px; }
 .conversation-preview { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#7d857e; font-size:10px; }
 .badges { display:flex; gap:5px; margin-top:2px; }
-.mode-badge,.status-badge { padding:3px 6px; border-radius:999px; font-size:8px; font-weight:700; }
+.mode-badge,.status-badge { padding:3px 6px; border-radius:999px; font-size:10px; font-weight:700; }
 .mode-badge.agent { color:#356244; background:#e1ede4; }.mode-badge.human { color:#805619; background:#f4e9d6; }.mode-badge.paused,.status-badge { color:#6d6575; background:#e9e5ec; }
 .detail-header { padding:21px 26px 17px; display:flex; align-items:center; justify-content:space-between; gap:20px; border-bottom:1px solid var(--line); background:#f8f9f6; }
 .detail-identity { min-width:0; display:flex; align-items:center; gap:12px; }
@@ -85,7 +85,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .messages { flex:1; overflow:auto; padding:25px clamp(18px,4vw,54px); display:flex; flex-direction:column; gap:9px; }
 .message { max-width:min(72%,590px); padding:10px 12px 7px; border-radius:12px; box-shadow:0 1px 1px #1820180a; }
 .message p { margin:0; white-space:pre-wrap; font-size:12px; line-height:1.5; }
-.message footer { margin-top:6px; display:flex; justify-content:flex-end; gap:7px; color:#8a918b; font-size:8px; }
+.message footer { margin-top:6px; display:flex; justify-content:flex-end; gap:7px; color:#8a918b; font-size:9.5px; }
 .message.inbound { align-self:flex-start; background:#fff; border-bottom-left-radius:3px; }.message.outbound { align-self:flex-end; color:#ecf1ed; background:#31573e; border-bottom-right-radius:3px; }.message.outbound footer { color:#b9c9bd; }
 .message.human { background:#263b2d; }
 .composer { padding:13px 20px 18px; display:flex; gap:9px; align-items:stretch; border-top:1px solid var(--line); background:#f8f9f6; }
@@ -129,13 +129,13 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .compact-row { min-height:66px; padding:10px 8px; display:grid; grid-template-columns:68px minmax(0,1fr) auto; align-items:center; gap:12px; border-bottom:1px solid #e7e9e5; }
 .compact-row:last-child { border:0; }.compact-row time { color:#36543e; font:600 15px Manrope,sans-serif; }.compact-row>span { display:grid; gap:3px; }.compact-row strong { font-size:12px; }.compact-row small { color:#79817a; font-size:10px; }
 .compact-when { display:flex; flex-direction:column; gap:1px; line-height:1.15; }.compact-when small { color:#79817a; font-size:10px; font-weight:600; text-transform:capitalize; }.compact-when strong { color:#36543e; font-size:15px; }
-.status-pill { width:max-content; padding:5px 8px; border-radius:999px; color:#536158; background:#e7ebe6; font-size:8px; text-transform:uppercase; letter-spacing:.06em; }.status-pill.confirmed { color:#31613f; background:#e0ede3; }.status-pill.pending { color:#7a5a28; background:#f3e9d8; }.status-pill.cancelled,.status-pill.no_show { color:#7b4b49; background:#f2e3e1; }
+.status-pill { width:max-content; padding:5px 8px; border-radius:999px; color:#536158; background:#e7ebe6; font-size:10px; text-transform:uppercase; letter-spacing:.06em; }.status-pill.confirmed { color:#31613f; background:#e0ede3; }.status-pill.pending { color:#7a5a28; background:#f3e9d8; }.status-pill.cancelled,.status-pill.no_show { color:#7b4b49; background:#f2e3e1; }
 .focus-card { padding:25px; color:#e7ece7; background:linear-gradient(145deg,#18241c,#2e4937); }.focus-card .eyebrow { color:#9db0a1; }.focus-card p { margin:18px 0 50px; color:#bdc9bf; line-height:1.65; font-size:12px; }.system-line { display:flex; align-items:center; gap:9px; color:#d9e2da; font-size:10px; }.system-line i { background:#81bd8e; }
 .quiet-empty { padding:34px; margin:0; color:#79817a; text-align:center; font-size:12px; }
 .table-card { max-width:1280px; margin:0 auto; overflow:auto; }
 .appointment-table { min-width:830px; }
 .table-head,.appointment-row { display:grid; grid-template-columns:1.2fr 1.25fr 1.25fr .9fr 88px; gap:16px; align-items:center; padding:0 20px; }
-.table-head { min-height:46px; color:#818a82; background:#f1f3ef; text-transform:uppercase; letter-spacing:.08em; font-size:8px; font-weight:700; }
+.table-head { min-height:46px; color:#818a82; background:#f1f3ef; text-transform:uppercase; letter-spacing:.08em; font-size:10px; font-weight:700; }
 .appointment-row { min-height:82px; border-top:1px solid #e2e5e0; }.appointment-row>time,.appointment-row>span { display:grid; gap:4px; }.appointment-row strong { font-size:12px; }.appointment-row small { color:#79817a; font-size:10px; }.appointment-row .status-pill+small { margin-top:2px; }
 .danger-action { border:1px solid #d6dbd5; border-radius:8px; padding:7px 9px; color:#7d5551; background:#fff; font-size:9px; font-weight:600; }.danger-action.confirm { color:#fff; background:#873f39; border-color:#873f39; }.danger-action:disabled { opacity:.45; cursor:not-allowed; }
 /* Citas · calendario */
@@ -249,7 +249,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   .sidebar .brand-lockup,.sidebar .sidebar-user { display:none; }
   .sidebar nav { display:flex; flex-direction:row; width:100%; gap:2px; }
   .sidebar nav button { flex:1; min-height:auto; padding:5px 2px; gap:4px; border-radius:12px; color:#7c887d; }
-  .sidebar nav button span { font-size:9.5px; font-weight:600; }
+  .sidebar nav button span { font-size:10.5px; font-weight:600; }
   .sidebar nav button.active { color:#eef2ed; background:#28342b; }
 
   /* Inbox / detalle */
@@ -312,6 +312,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   .cal-month { padding:10px; }
   .cal-cell { min-height:60px; padding:4px; gap:3px; border-radius:9px; }
   .cal-cell>strong { width:20px; height:20px; font-size:10px; }
-  .cal-chip { font-size:8px; padding:1px 4px; }
+  .cal-chip { font-size:9px; padding:1px 4px; }
 }
 @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition:none!important; } }
